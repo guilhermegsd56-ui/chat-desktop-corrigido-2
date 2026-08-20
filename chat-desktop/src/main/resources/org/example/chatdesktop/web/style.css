@@ -1,0 +1,1839 @@
+:root {
+    --black-1: #000000;
+    --black-2: #050505;
+    --black-3: #080611;
+
+    --purple-deep: #24005C;
+    --purple-neon: #6A00FF;
+    --purple-vivid: #8B2CFF;
+    --purple-light: #B84DFF;
+
+    --magenta: #FF00C8;
+    --pink: #FF3DCE;
+    --pink-light: #FF78E5;
+
+    --blue-electric: #2400FF;
+    --blue-neon: #4B00FF;
+    --blue-light: #6C7BFF;
+
+    --white: #FFFFFF;
+    --white-2: #D8D8D8;
+    --gray: #8A8A8A;
+
+    --panel: rgba(255, 255, 255, 0.045);
+    --panel-solid: rgba(14, 14, 20, 0.96);
+    --panel-border: rgba(255, 255, 255, 0.10);
+
+    --display: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    --body: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+}
+
+
+/* =========================================================
+   RESET
+   ========================================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+
+    min-width: 0;
+    min-height: 0;
+
+    background: var(--black-1);
+
+    overflow: hidden;
+
+    font-family: var(--body);
+
+    cursor: default;
+
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+}
+
+body {
+    position: relative;
+}
+
+button,
+input {
+    font-family: inherit;
+}
+
+
+/* =========================================================
+   APP
+   ========================================================= */
+
+#app {
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    min-width: 0;
+    min-height: 0;
+
+    background: #000;
+
+    overflow: hidden;
+
+    isolation: isolate;
+}
+
+
+/* =========================================================
+   BACKGROUND
+   ========================================================= */
+
+.bg-layer {
+    position: absolute;
+    inset: 0;
+
+    z-index: 0;
+
+    background:
+            radial-gradient(
+                    circle at 62% 46%,
+                    rgba(106, 0, 255, 0.20),
+                    transparent 32%
+            ),
+            radial-gradient(
+                    circle at 74% 62%,
+                    rgba(255, 0, 200, 0.11),
+                    transparent 30%
+            ),
+            radial-gradient(
+                    circle at 20% 85%,
+                    rgba(36, 0, 92, 0.35),
+                    transparent 40%
+            ),
+            #000000;
+
+    opacity: 1;
+}
+
+.vignette {
+    position: absolute;
+    inset: 0;
+
+    z-index: 1;
+
+    pointer-events: none;
+
+    background:
+            radial-gradient(
+                    ellipse at center,
+                    transparent 45%,
+                    rgba(0, 0, 0, 0.75) 100%
+            );
+}
+
+.grain {
+    position: absolute;
+    inset: 0;
+
+    z-index: 2;
+
+    pointer-events: none;
+
+    opacity: 0.025;
+
+    /* Removido mix-blend-mode para evitar artefatos no JavaFX WebView */
+    background-image:
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.top-header {
+    position: absolute;
+
+    top: 36px;
+    left: 48px;
+    right: 48px;
+
+    z-index: 100;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    width: auto;
+}
+
+.logo {
+    font-family: var(--display);
+
+    font-weight: 700;
+    font-size: 15px;
+
+    letter-spacing: 0.5px;
+
+    color: var(--white);
+
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    cursor: pointer;
+
+    background: none;
+    border: none;
+}
+
+.logo span {
+    width: 7px;
+    height: 7px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background:
+            linear-gradient(
+                    135deg,
+                    var(--purple-neon),
+                    var(--magenta)
+            );
+
+    box-shadow:
+            0 0 12px var(--purple-vivid);
+}
+
+
+/* =========================================================
+   PROFILE BUTTON
+   ========================================================= */
+
+.profile-btn {
+    background: rgba(10, 10, 10, 0.92);
+
+    /*
+     * Não utilizar backdrop-filter aqui.
+     * O JavaFX WebView pode apresentar quadrados pretos
+     * ao recalcular camadas com blur.
+     */
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    padding: 8px 16px;
+
+    border-radius: 999px;
+
+    color: var(--white-2);
+
+    font-family: var(--body);
+    font-size: 13px;
+
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    transition:
+            border-color 0.3s ease,
+            color 0.3s ease,
+            background 0.3s ease;
+}
+
+.profile-btn:hover {
+    border-color: rgba(184, 77, 255, 0.4);
+
+    color: var(--white);
+
+    background: rgba(139, 44, 255, 0.08);
+}
+
+
+/* =========================================================
+   SISTEMA DE TELAS
+   ========================================================= */
+
+/*
+ * IMPORTANTE:
+ *
+ * Não usamos mais display:none.
+ *
+ * As telas continuam existindo no DOM.
+ * Apenas ficam invisíveis e sem interação.
+ *
+ * Isso evita o WebView do JavaFX reconstruir toda a árvore
+ * visual quando o usuário troca de tela.
+ */
+
+.view {
+    position: absolute;
+
+    inset: 0;
+
+    display: flex;
+
+    opacity: 0;
+
+    visibility: hidden;
+
+    pointer-events: none;
+
+    z-index: 5;
+
+    min-width: 0;
+    min-height: 0;
+
+    overflow: hidden;
+
+    transition:
+            opacity 0.22s ease,
+            visibility 0s linear 0.22s;
+}
+
+.view.active {
+    opacity: 1;
+
+    visibility: visible;
+
+    pointer-events: auto;
+
+    z-index: 10;
+
+    transition:
+            opacity 0.22s ease,
+            visibility 0s linear 0s;
+}
+
+
+/*
+ * Evita que animações das telas invisíveis continuem
+ * causando processamento e artefatos.
+ */
+
+.view:not(.active) .orbit-ai,
+.view:not(.active) .blob-wrap,
+.view:not(.active) .mini-orbit .blob-wrap {
+    animation-play-state: paused !important;
+}
+
+
+/* =========================================================
+   HOME
+   ========================================================= */
+
+#view-home {
+    justify-content: flex-start;
+    align-items: center;
+
+    overflow: hidden;
+}
+
+.home-inner {
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    min-width: 0;
+    min-height: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.hero {
+    position: relative;
+
+    z-index: 10;
+
+    width: min(48%, 640px);
+
+    padding-left: clamp(48px, 7.8vw, 100px);
+    padding-right: 24px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 18px;
+
+    max-height: calc(100vh - 180px);
+
+    justify-content: center;
+
+    overflow: visible;
+
+    min-width: 0;
+}
+
+.eyebrow {
+    font-family: var(--body);
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    letter-spacing: 3px;
+
+    color: var(--purple-light);
+
+    text-transform: uppercase;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+}
+
+.eyebrow::before {
+    content: '';
+
+    width: 22px;
+    height: 1px;
+
+    flex-shrink: 0;
+
+    background:
+            linear-gradient(
+                    90deg,
+                    var(--purple-neon),
+                    transparent
+            );
+}
+
+h1.hero-title {
+    font-family: var(--display);
+
+    font-weight: 700;
+
+    font-size: clamp(38px, 4.4vw, 64px);
+
+    line-height: 1.04;
+
+    letter-spacing: -1.2px;
+
+    color: var(--white);
+
+    white-space: normal;
+}
+
+h1.hero-title .grad {
+    color: var(--purple-light);
+
+    text-shadow:
+            0 0 24px rgba(139, 44, 255, 0.25);
+}
+
+.hero-desc {
+    font-size: 16px;
+
+    line-height: 1.55;
+
+    color: var(--white-2);
+
+    max-width: 440px;
+
+    font-weight: 400;
+
+    margin: 0;
+}
+
+
+/* =========================================================
+   HOME INPUT
+   ========================================================= */
+
+.ask-bar {
+    margin-top: 14px;
+
+    width: 100%;
+    max-width: 480px;
+
+    height: 64px;
+
+    min-height: 64px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 6px 8px 6px 26px;
+
+    border-radius: 999px;
+
+    background: rgba(18, 18, 24, 0.94);
+
+    border: 1px solid var(--panel-border);
+
+    transition:
+            border-color 0.3s ease,
+            box-shadow 0.3s ease;
+}
+
+.ask-bar:focus-within {
+    border-color: rgba(184, 77, 255, 0.45);
+
+    box-shadow:
+            0 0 0 1px rgba(184, 77, 255, 0.15),
+            0 0 34px rgba(139, 44, 255, 0.18);
+}
+
+.ask-bar input {
+    flex: 1 1 auto;
+
+    min-width: 0;
+
+    height: 100%;
+
+    background: transparent;
+
+    border: none;
+
+    outline: none;
+
+    color: var(--white);
+
+    font-family: var(--body);
+
+    font-size: 15px;
+}
+
+.ask-bar input::placeholder {
+    color: var(--gray);
+}
+
+
+/* =========================================================
+   BOTÃO ENVIAR
+   ========================================================= */
+
+.send-btn {
+    width: 48px;
+    height: 48px;
+
+    min-width: 48px;
+    min-height: 48px;
+
+    flex: 0 0 48px;
+
+    border-radius: 50%;
+
+    border: none;
+
+    cursor: pointer;
+
+    background:
+            linear-gradient(
+                    135deg,
+                    var(--purple-neon),
+                    var(--magenta)
+            );
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    transition:
+            transform 0.25s ease,
+            box-shadow 0.25s ease,
+            opacity 0.25s ease;
+
+    box-shadow:
+            0 0 18px rgba(139, 44, 255, 0.35);
+}
+
+.send-btn:hover {
+    transform: scale(1.06);
+
+    box-shadow:
+            0 0 30px rgba(255, 0, 200, 0.45);
+}
+
+.send-btn:active {
+    transform: scale(0.96);
+}
+
+.send-btn:disabled {
+    opacity: 0.45;
+
+    cursor: default;
+
+    transform: none;
+
+    box-shadow: none;
+}
+
+.send-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+
+/* =========================================================
+   QUICK BUTTONS
+   ========================================================= */
+
+.quick-row {
+    display: flex;
+
+    gap: 14px;
+
+    margin-top: 4px;
+
+    flex-wrap: wrap;
+}
+
+.pill {
+    font-size: 12.5px;
+
+    color: var(--white-2);
+
+    padding: 9px 16px;
+
+    border-radius: 999px;
+
+    border: 1px solid rgba(255, 255, 255, 0.09);
+
+    background: rgba(255, 255, 255, 0.02);
+
+    cursor: pointer;
+
+    transition:
+            border-color 0.3s ease,
+            color 0.3s ease,
+            background 0.3s ease;
+
+    letter-spacing: 0.2px;
+}
+
+.pill:hover {
+    border-color: rgba(184, 77, 255, 0.4);
+
+    color: var(--white);
+
+    background: rgba(139, 44, 255, 0.08);
+}
+
+
+/* =========================================================
+   ORBIT STAGE
+   ========================================================= */
+
+.orbit-stage {
+    position: absolute;
+
+    right: 6%;
+    top: 50%;
+
+    width: 640px;
+    height: 640px;
+
+    transform: translateY(-50%);
+
+    z-index: 5;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    pointer-events: none;
+}
+
+.orbit-ai {
+    position: relative;
+
+    width: 420px;
+    height: 420px;
+
+    opacity: 1;
+
+    border-radius: 50%;
+
+    filter: none;
+
+    box-shadow:
+            0 0 55px rgba(106, 0, 255, 0.28),
+            0 0 110px rgba(255, 0, 200, 0.12);
+
+    animation:
+            orbitEntrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+            orbitFloat 6.5s ease-in-out infinite;
+}
+
+@keyframes orbitEntrance {
+    0% {
+        opacity: 0;
+
+        transform:
+                scale(0.72)
+                rotate(-8deg);
+    }
+
+    60% {
+        opacity: 0.9;
+
+        transform:
+                scale(1.03)
+                rotate(2deg);
+    }
+
+    100% {
+        opacity: 1;
+
+        transform:
+                scale(1)
+                rotate(0deg);
+    }
+}
+
+
+/* =========================================================
+   ORBIT BLOB
+   ========================================================= */
+
+.blob-wrap {
+    position: absolute;
+
+    inset: 0;
+
+    /*
+     * Apenas uma animação de transform.
+     * Antes havia rotate + translateY no mesmo elemento.
+     * Isso podia causar conflitos no WebView.
+     */
+    animation:
+            orbitRotate 22s linear infinite;
+}
+
+.blob {
+    position: absolute;
+
+    inset: 0;
+
+    border-radius:
+            42% 58% 63% 37% /
+        41% 44% 56% 59%;
+
+    background:
+            conic-gradient(
+                    from 120deg at 50% 50%,
+                    var(--blue-electric),
+                    var(--purple-vivid) 30%,
+                    var(--magenta) 55%,
+                    var(--purple-neon) 75%,
+                    var(--blue-electric) 100%
+            );
+
+    animation:
+            morph 9s ease-in-out infinite;
+
+    /*
+     * Removido mix-blend-mode: screen.
+     */
+    opacity: 0.95;
+}
+
+.blob.b2 {
+    inset: 8%;
+
+    background:
+            conic-gradient(
+                    from 240deg at 50% 50%,
+                    var(--pink),
+                    var(--blue-neon) 40%,
+                    var(--purple-light) 70%,
+                    var(--pink) 100%
+            );
+
+    animation:
+            morph2 11s ease-in-out infinite;
+
+    opacity: 0.75;
+}
+
+.blob.core {
+    inset: 26%;
+
+    background:
+            radial-gradient(
+                    circle at 40% 35%,
+                    rgba(255, 255, 255, 0.9),
+                    var(--purple-light) 35%,
+                    var(--magenta) 70%,
+                    transparent 100%
+            );
+
+    animation:
+            morph3 7s ease-in-out infinite;
+
+    opacity: 0.9;
+}
+
+@keyframes orbitRotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes orbitFloat {
+    0%,
+    100% {
+        margin-top: 0;
+    }
+
+    50% {
+        margin-top: -18px;
+    }
+}
+
+@keyframes morph {
+    0%,
+    100% {
+        border-radius:
+                42% 58% 63% 37% /
+            41% 44% 56% 59%;
+    }
+
+    33% {
+        border-radius:
+                63% 37% 41% 59% /
+            55% 48% 52% 45%;
+    }
+
+    66% {
+        border-radius:
+                37% 63% 55% 45% /
+            48% 62% 38% 52%;
+    }
+}
+
+@keyframes morph2 {
+    0%,
+    100% {
+        border-radius:
+                55% 45% 40% 60% /
+            60% 40% 60% 40%;
+    }
+
+    50% {
+        border-radius:
+                40% 60% 58% 42% /
+            45% 55% 45% 55%;
+    }
+}
+
+@keyframes morph3 {
+    0%,
+    100% {
+        border-radius:
+                50% 50% 45% 55% /
+            55% 45% 55% 45%;
+
+        transform: scale(1);
+    }
+
+    50% {
+        border-radius:
+                45% 55% 50% 50% /
+            50% 50% 50% 50%;
+
+        transform: scale(1.06);
+    }
+}
+
+
+/* =========================================================
+   ORBIT STATES
+   ========================================================= */
+
+.orbit-ai.listening {
+    transform: scale(1.02);
+
+    transition:
+            transform 0.5s ease;
+}
+
+.orbit-ai.thinking {
+    transform: scale(1.05);
+
+    transition:
+            transform 0.5s ease;
+}
+
+.orbit-ai.responding {
+    transform: scale(1.02);
+
+    transition:
+            transform 0.5s ease;
+}
+
+.orbit-ai.idle {
+    transform: scale(1);
+
+    transition:
+            transform 0.5s ease;
+}
+
+.orbit-ai.listening .blob-wrap {
+    animation-duration: 14s;
+}
+
+.orbit-ai.thinking .blob-wrap {
+    animation-duration: 9s;
+}
+
+.orbit-ai.responding .blob-wrap {
+    animation-duration: 16s;
+}
+
+.orbit-ai.thinking .blob {
+    animation-duration: 4.5s;
+    opacity: 1;
+}
+
+.orbit-ai.thinking .blob.b2 {
+    animation-duration: 5.5s;
+}
+
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+.status {
+    position: absolute;
+
+    left: 100px;
+    bottom: 44px;
+
+    z-index: 15;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    font-size: 12px;
+
+    color: var(--gray);
+
+    letter-spacing: 0.4px;
+}
+
+.status .dot {
+    width: 6px;
+    height: 6px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background: var(--purple-vivid);
+
+    box-shadow:
+            0 0 8px var(--purple-vivid);
+
+    animation:
+            dotPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+    0%,
+    100% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+
+/* =========================================================
+   CHAT VIEW
+   ========================================================= */
+
+#view-chat {
+    position: absolute;
+
+    inset: 0;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    padding:
+            118px
+            32px
+            28px;
+
+    z-index: 10;
+
+    min-width: 0;
+    min-height: 0;
+
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   CHAT SHELL
+   ========================================================= */
+
+.chat-shell {
+    width: min(
+            980px,
+            calc(100% - 40px)
+    );
+
+    height: calc(100vh - 146px);
+
+    min-height: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    position: relative;
+
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   CHAT HEADER
+   ========================================================= */
+
+.chat-header {
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    width: 100%;
+
+    padding-bottom: 18px;
+
+    border-bottom:
+            1px solid rgba(255, 255, 255, 0.07);
+
+    margin-bottom: 18px;
+
+    flex: 0 0 auto;
+
+    min-height: 57px;
+}
+
+.mini-orbit {
+    position: relative;
+
+    width: 38px;
+    height: 38px;
+
+    min-width: 38px;
+    min-height: 38px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+}
+
+.mini-orbit .blob-wrap {
+    animation:
+            orbitRotate 10s linear infinite;
+}
+
+.mini-orbit .blob {
+    animation:
+            morph 5s ease-in-out infinite;
+}
+
+.chat-header-text {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 2px;
+
+    min-width: 0;
+}
+
+.chat-header-text .name {
+    font-family: var(--display);
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    color: var(--white);
+}
+
+.chat-header-text .state-label {
+    font-size: 11.5px;
+
+    color: var(--gray);
+
+    letter-spacing: 0.3px;
+
+    transition:
+            color 0.3s ease;
+}
+
+
+/* =========================================================
+   BACK BUTTONS
+   ========================================================= */
+
+.back-btn {
+    margin-left: auto;
+
+    background: transparent;
+
+    border:
+            1px solid rgba(255, 255, 255, 0.09);
+
+    color: var(--white-2);
+
+    font-family: var(--body);
+
+    font-size: 12.5px;
+
+    padding: 8px 16px;
+
+    border-radius: 999px;
+
+    cursor: pointer;
+
+    transition:
+            border-color 0.3s ease,
+            color 0.3s ease,
+            background 0.3s ease;
+
+    letter-spacing: 0.2px;
+
+    flex-shrink: 0;
+}
+
+.back-btn:hover {
+    border-color:
+            rgba(184, 77, 255, 0.4);
+
+    color: var(--white);
+
+    background:
+            rgba(139, 44, 255, 0.08);
+}
+
+#newChatBtn {
+    margin-left: auto;
+}
+
+#backHomeBtn {
+    margin-left: 10px;
+}
+
+
+/* =========================================================
+   MESSAGES
+   ========================================================= */
+
+.messages {
+    width: 100%;
+
+    flex: 1 1 auto;
+
+    min-height: 0;
+
+    overflow-x: hidden;
+
+    overflow-y: auto;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 18px;
+
+    padding:
+            6px
+            8px
+            18px;
+
+    scroll-behavior: smooth;
+
+    overscroll-behavior: contain;
+}
+
+.messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.messages::-webkit-scrollbar-thumb {
+    background:
+            rgba(255, 255, 255, 0.12);
+
+    border-radius: 6px;
+}
+
+
+/* =========================================================
+   MESSAGE
+   ========================================================= */
+
+.msg {
+    display: flex;
+
+    max-width: 82%;
+
+    flex-shrink: 0;
+
+    animation:
+            msgIn 0.35s
+            cubic-bezier(0.16, 1, 0.3, 1)
+            forwards;
+}
+
+@keyframes msgIn {
+    from {
+        opacity: 0;
+
+        transform:
+                translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+
+        transform:
+                translateY(0);
+    }
+}
+
+.msg.user {
+    align-self: flex-end;
+}
+
+.msg.orbit {
+    align-self: flex-start;
+}
+
+
+/* =========================================================
+   MESSAGE BUBBLE
+   ========================================================= */
+
+.bubble {
+    padding: 14px 18px;
+
+    border-radius: 18px;
+
+    font-size: 14.5px;
+
+    line-height: 1.6;
+
+    color: var(--white);
+
+    white-space: pre-wrap;
+
+    overflow-wrap: anywhere;
+
+    word-break: break-word;
+}
+
+.msg.user .bubble {
+    background:
+            linear-gradient(
+                    135deg,
+                    rgba(106, 0, 255, 0.35),
+                    rgba(255, 0, 200, 0.28)
+            );
+
+    border:
+            1px solid rgba(184, 77, 255, 0.3);
+
+    border-bottom-right-radius: 6px;
+}
+
+.msg.orbit .bubble {
+    background:
+            rgba(255, 255, 255, 0.04);
+
+    border:
+            1px solid var(--panel-border);
+
+    border-bottom-left-radius: 6px;
+
+    color: var(--white-2);
+}
+
+
+/* =========================================================
+   TYPING
+   ========================================================= */
+
+.typing-dots {
+    display: flex;
+
+    gap: 5px;
+
+    padding: 16px 18px;
+}
+
+.typing-dots span {
+    width: 6px;
+    height: 6px;
+
+    border-radius: 50%;
+
+    background:
+            var(--purple-light);
+
+    animation:
+            typingBounce 1.2s
+            ease-in-out infinite;
+}
+
+.typing-dots span:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.typing-dots span:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+@keyframes typingBounce {
+    0%,
+    60%,
+    100% {
+        transform: translateY(0);
+
+        opacity: 0.4;
+    }
+
+    30% {
+        transform: translateY(-5px);
+
+        opacity: 1;
+    }
+}
+
+
+/* =========================================================
+   CHAT INPUT
+   ========================================================= */
+
+.chat-ask-bar {
+    width: 100%;
+
+    height: 60px;
+
+    min-height: 60px;
+
+    flex: 0 0 60px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding:
+            6px
+            8px
+            6px
+            24px;
+
+    border-radius: 999px;
+
+    background:
+            rgba(18, 18, 24, 0.96);
+
+    border:
+            1px solid var(--panel-border);
+
+    /*
+     * Sem backdrop-filter.
+     * Mais estável no JavaFX WebView.
+     */
+
+    transition:
+            border-color 0.3s ease,
+            box-shadow 0.3s ease;
+
+    position: relative;
+
+    z-index: 30;
+
+    flex-shrink: 0;
+}
+
+.chat-ask-bar:focus-within {
+    border-color:
+            rgba(184, 77, 255, 0.45);
+
+    box-shadow:
+            0 0 0 1px
+            rgba(184, 77, 255, 0.15),
+
+            0 0 34px
+            rgba(139, 44, 255, 0.18);
+}
+
+.chat-ask-bar input {
+    flex: 1 1 auto;
+
+    min-width: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    background: transparent;
+
+    border: none;
+
+    outline: none;
+
+    color: var(--white);
+
+    font-family: var(--body);
+
+    font-size: 14.5px;
+}
+
+.chat-ask-bar input::placeholder {
+    color: var(--gray);
+}
+
+.chat-ask-bar .send-btn {
+    width: 44px;
+    height: 44px;
+
+    min-width: 44px;
+    min-height: 44px;
+
+    flex: 0 0 44px;
+}
+
+.chat-ask-bar .send-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+
+/* =========================================================
+   EMPTY CHAT
+   ========================================================= */
+
+.empty-chat {
+    width: 100%;
+    height: 100%;
+
+    min-height: 0;
+
+    flex: 1 1 auto;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    color: var(--gray);
+
+    text-align: center;
+
+    flex-shrink: 0;
+}
+
+.empty-chat .big-orbit {
+    width: 96px;
+    height: 96px;
+
+    position: relative;
+
+    margin-bottom: 6px;
+
+    flex-shrink: 0;
+}
+
+.empty-chat .big-orbit .blob-wrap {
+    animation:
+            orbitRotate 18s linear infinite;
+}
+
+.empty-chat p {
+    font-size: 13.5px;
+
+    max-width: 280px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   PROFILE VIEW
+   ========================================================= */
+
+#view-profile {
+    position: absolute;
+
+    inset: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding:
+            100px
+            24px
+            40px;
+
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    z-index: 20;
+}
+
+.profile-card {
+    width: min(420px, 100%);
+
+    max-height: calc(100vh - 180px);
+
+    overflow-y: auto;
+
+    padding: 38px;
+
+    border-radius: 24px;
+
+    background:
+            rgba(14, 14, 20, 0.97);
+
+    border:
+            1px solid var(--panel-border);
+
+    box-shadow:
+            0 20px 60px rgba(0, 0, 0, 0.45);
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 18px;
+
+    text-align: center;
+
+    position: relative;
+
+    z-index: 30;
+}
+
+.profile-card::-webkit-scrollbar {
+    width: 5px;
+}
+
+.profile-card::-webkit-scrollbar-thumb {
+    background:
+            rgba(255, 255, 255, 0.12);
+
+    border-radius: 6px;
+}
+
+.profile-avatar {
+    width: 84px;
+    height: 84px;
+
+    position: relative;
+
+    margin-bottom: 6px;
+
+    flex-shrink: 0;
+}
+
+.profile-avatar .blob-wrap {
+    animation:
+            orbitRotate 16s linear infinite;
+}
+
+.profile-card h2 {
+    font-family: var(--display);
+
+    font-size: 22px;
+
+    color: var(--white);
+
+    font-weight: 600;
+}
+
+.profile-card .sub {
+    font-size: 13px;
+
+    color: var(--gray);
+
+    letter-spacing: 0.3px;
+}
+
+.profile-fields {
+    width: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+
+    margin-top: 12px;
+}
+
+.profile-field {
+    width: 100%;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 16px;
+
+    padding: 13px 16px;
+
+    border-radius: 12px;
+
+    background:
+            rgba(255, 255, 255, 0.02);
+
+    border:
+            1px solid rgba(255, 255, 255, 0.06);
+
+    font-size: 13px;
+}
+
+.profile-field .k {
+    color: var(--gray);
+}
+
+.profile-field .v {
+    color: var(--white-2);
+
+    font-weight: 500;
+
+    text-align: right;
+
+    overflow-wrap: anywhere;
+}
+
+.profile-card .back-btn {
+    margin-top: 8px;
+
+    margin-left: 0;
+}
+
+
+/* =========================================================
+   SELEÇÃO
+   ========================================================= */
+
+::selection {
+    background:
+            rgba(139, 44, 255, 0.35);
+
+    color: #fff;
+}
+
+
+/* =========================================================
+   ACESSIBILIDADE
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+
+        animation-iteration-count: 1 !important;
+
+        transition-duration: 0.01ms !important;
+
+        scroll-behavior: auto !important;
+    }
+}
+
+
+/* =========================================================
+   RESPONSIVIDADE
+   ========================================================= */
+
+@media (max-width: 1100px) {
+
+    .hero {
+        width: 62%;
+
+        padding-left: 48px;
+        padding-right: 20px;
+    }
+
+    .orbit-stage {
+        width: 520px;
+        height: 520px;
+
+        right: -8%;
+
+        opacity: 0.55;
+    }
+
+    .orbit-ai {
+        width: 360px;
+        height: 360px;
+    }
+}
+
+
+@media (max-height: 760px) {
+
+    .hero {
+        max-height:
+                calc(100vh - 140px);
+
+        gap: 14px;
+    }
+
+    h1.hero-title {
+        font-size:
+                clamp(
+                        34px,
+                        4vw,
+                        56px
+                );
+    }
+
+    .hero-desc {
+        font-size: 15px;
+    }
+
+    .ask-bar {
+        height: 58px;
+
+        min-height: 58px;
+    }
+
+    .quick-row {
+        margin-top: 0;
+    }
+
+    .status {
+        bottom: 24px;
+    }
+
+    #view-chat {
+        padding-top: 100px;
+    }
+
+    .chat-shell {
+        height:
+                calc(100vh - 128px);
+    }
+}
+
+
+@media (max-width: 720px) {
+
+    .top-header {
+        top: 24px;
+
+        left: 24px;
+
+        right: 24px;
+    }
+
+    .hero {
+        width: 100%;
+
+        padding:
+                96px
+                28px
+                72px;
+
+        align-items: flex-start;
+
+        max-height: 100%;
+    }
+
+    .orbit-stage {
+        right: -150px;
+
+        opacity: 0.28;
+    }
+
+    .quick-row {
+        flex-wrap: wrap;
+    }
+
+    #view-chat {
+        padding:
+                100px
+                16px
+                18px;
+    }
+
+    .chat-shell {
+        width: 100%;
+
+        height:
+                calc(100vh - 128px);
+    }
+
+    .chat-header {
+        gap: 10px;
+    }
+
+    .chat-header .back-btn {
+        padding:
+                7px
+                11px;
+    }
+
+    .chat-ask-bar {
+        padding-left: 16px;
+    }
+
+    .profile-card {
+        padding: 28px 22px;
+    }
+}
