@@ -8,87 +8,299 @@ import org.example.chatdesktop.service.GroqService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletionException;
 
-/**
- * Objeto exposto ao JavaScript da WebView como "window.javaBridge".
- * O front-end (script.js) chama sendMessage(texto) e essa classe:
- *   1) guarda o histórico da conversa,
- *   2) chama o GroqService (que efetivamente fala com a API da Groq),
- *   3) devolve a resposta para o JS através de window.orbitReceive(...)
- *      ou window.orbitError(...), sempre na Application Thread do JavaFX.
- */
 public class JSBridge {
 
     private final WebEngine webEngine;
+
     private final GroqService groqService;
-    private final List<ChatMessage> historico;
+
     private final Gson gson = new Gson();
 
+    private final List<ChatMessage> historico =
+            new ArrayList<>();
+
+    private long conversationId = 0;
+
+
     private static final String SYSTEM_PROMPT =
-            "Você é Orbit, um assistente de IA conversacional. Responda sempre em "
-                    + "português do Brasil, de forma clara, direta e acolhedora. Seja útil "
-                    + "e objetivo, evitando respostas excessivamente longas quando uma "
-                    + "resposta curta resolve.";
+            """
+            Você é o Orbit, um assistente de inteligência artificial.
+
+            Responda sempre em português do Brasil.
+
+            Seja claro, útil, profissional e objetivo.
+
+            Você pode ajudar com programação, tecnologia,
+            estudos, dúvidas, explicações e assuntos gerais.
+
+            Quando o usuário pedir código, forneça código
+            funcional e explique somente o necessário.
+
+            Não invente informações.
+            """;
+
 
     public JSBridge(WebEngine webEngine) {
+
         this.webEngine = webEngine;
-        this.groqService = new GroqService();
-        this.historico = new ArrayList<>();
 
-        historico.add(new ChatMessage("system", SYSTEM_PROMPT));
+        System.out.println(
+                "Inicializando GroqService..."
+        );
+
+        this.groqService =
+                new GroqService();
+
+        resetHistorico();
+
+        System.out.println(
+                "JSBridge inicializado."
+        );
     }
 
+
     /**
-     * Chamado pelo JavaScript: window.javaBridge.newChat().
-     * Descarta todo o histórico da conversa atual (menos o prompt de sistema)
-     * para que a próxima mensagem enviada comece um contexto novo, sem
-     * nenhuma memória da conversa anterior.
+     * Chamado pelo botão "Nova conversa".
      */
-    public void newChat() {
-        historico.clear();
-        historico.add(new ChatMessage("system", SYSTEM_PROMPT));
+    public synchronized void newChat() {
+
+        System.out.println(
+                "Iniciando nova conversa."
+        );
+
+        conversationId++;
+
+        resetHistorico();
     }
 
+
     /**
-     * Chamado diretamente pelo JavaScript: window.javaBridge.sendMessage(texto)
+     * Chamado pelo JavaScript:
+     *
+     * window.javaBridge.sendMessage(texto)
      */
     public void sendMessage(String texto) {
 
-        if (texto == null || texto.isBlank()) {
+        System.out.println(
+                "Mensagem recebida pelo Java: "
+                        + texto
+        );
+
+
+        if (
+                texto == null ||
+                        texto.isBlank()
+        ) {
+
+            System.out.println(
+                    "Mensagem vazia."
+            );
+
             return;
         }
 
-        historico.add(new ChatMessage("user", texto));
 
-        groqService.enviarMensagem(historico)
-                .thenAccept(this::onSucesso)
-                .exceptionally(this::onErro);
+        final List<ChatMessage> copiaHistorico;
+
+        final long requestConversationId;
+
+
+        synchronized (this) {
+
+            historico.add(
+                    new ChatMessage(
+                            "user",
+                            texto.trim()
+                    )
+            );
+
+
+            copiaHistorico =
+                    new ArrayList<>(
+                            historico
+                    );
+
+
+            requestConversationId =
+                    conversationId;
+        }
+
+
+        System.out.println(
+                "Enviando mensagem para a Groq..."
+        );
+
+
+        groqService
+                .enviarMensagem(
+                        copiaHistorico
+                )
+                .thenAccept(resposta -> {
+
+                    System.out.println(
+                            "Resposta recebida da Groq:"
+                    );
+
+                    System.out.println(
+                            resposta
+                    );
+
+
+                    onSucesso(
+                            requestConversationId,
+                            resposta
+                    );
+
+                })
+                .exceptionally(erro -> {
+
+                    System.err.println(
+                            "ERRO AO CONSULTAR GROQ:"
+                    );
+
+                    erro.printStackTrace();
+
+
+                    onErro(
+                            requestConversationId,
+                            erro
+                    );
+
+
+                    return null;
+                });
     }
 
-    private void onSucesso(String resposta) {
 
-        historico.add(new ChatMessage("assistant", resposta));
+    private void onSucesso(
+            long requestConversationId,
+            String resposta
+    ) {
 
-        Platform.runLater(() ->
-                webEngine.executeScript(
-                        "window.orbitReceive(" + gson.toJson(resposta) + ")"
-                )
-        );
+        synchronized (this) {
+
+            /*
+             * Ignora respostas de uma conversa
+             * antiga que já foi substituída.
+             */
+            if (
+                    requestConversationId !=
+                            conversationId
+            ) {
+
+                return;
+            }
+
+
+            historico.add(
+                    new ChatMessage(
+                            "assistant",
+                            resposta
+                    )
+            );
+        }
+
+
+        String script =
+                "window.orbitReceive("
+                        + gson.toJson(resposta)
+                        + ");";
+
+
+        executarJavaScript(script);
     }
 
-    private Void onErro(Throwable erro) {
 
-        Throwable causa = erro.getCause() != null ? erro.getCause() : erro;
-        String mensagem = causa.getMessage() != null
-                ? causa.getMessage()
-                : "Falha desconhecida ao falar com a Groq.";
+    private void onErro(
+            long requestConversationId,
+            Throwable erro
+    ) {
 
-        Platform.runLater(() ->
+        synchronized (this) {
+
+            if (
+                    requestConversationId !=
+                            conversationId
+            ) {
+
+                return;
+            }
+        }
+
+
+        Throwable causa = erro;
+
+
+        if (
+                causa instanceof CompletionException &&
+                        causa.getCause() != null
+        ) {
+
+            causa =
+                    causa.getCause();
+        }
+
+
+        String mensagem =
+                causa.getMessage();
+
+
+        if (
+                mensagem == null ||
+                        mensagem.isBlank()
+        ) {
+
+            mensagem =
+                    "Não foi possível obter uma resposta da IA.";
+        }
+
+
+        String script =
+                "window.orbitError("
+                        + gson.toJson(mensagem)
+                        + ");";
+
+
+        executarJavaScript(script);
+    }
+
+
+    private void executarJavaScript(
+            String script
+    ) {
+
+        Platform.runLater(() -> {
+
+            try {
+
                 webEngine.executeScript(
-                        "window.orbitError(" + gson.toJson(mensagem) + ")"
+                        script
+                );
+
+            } catch (Exception e) {
+
+                System.err.println(
+                        "Erro ao executar JavaScript:"
+                );
+
+                e.printStackTrace();
+            }
+        });
+    }
+
+
+    private synchronized void resetHistorico() {
+
+        historico.clear();
+
+
+        historico.add(
+                new ChatMessage(
+                        "system",
+                        SYSTEM_PROMPT
                 )
         );
-
-        return null;
     }
 }

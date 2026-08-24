@@ -21,6 +21,6 @@ public final class GroqConfig {
             );
         }
 
-        return apiKey;
+        return apiKey.trim();
     }
 }

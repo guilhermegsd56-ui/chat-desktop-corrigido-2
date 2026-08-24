@@ -10,33 +10,82 @@ import org.example.chatdesktop.config.GroqConfig;
 public class Main extends Application {
 
     @Override
-    public void start(Stage stage) throws Exception {
+    public void start(
+            Stage stage
+    ) throws Exception {
 
-        // Falha rápido e com mensagem clara se a variável de ambiente
-        // GROQ_API_KEY não estiver configurada, em vez de deixar o app
-        // travar silenciosamente na primeira mensagem enviada.
+        /*
+         * Verifica se a chave da Groq existe
+         * antes de iniciar a aplicação.
+         */
         try {
+
             GroqConfig.getApiKey();
-        } catch (IllegalStateException e) {
-            System.err.println(e.getMessage());
+
+            System.out.println(
+                    "GROQ_API_KEY configurada com sucesso."
+            );
+
+        } catch (
+                IllegalStateException e
+        ) {
+
+            System.err.println(
+                    "ERRO: " + e.getMessage()
+            );
+
+            return;
         }
 
-        FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/org/example/chatdesktop/view/chat-view.fxml")
+
+        FXMLLoader loader =
+                new FXMLLoader(
+                        getClass().getResource(
+                                "/org/example/chatdesktop/view/chat-view.fxml"
+                        )
+                );
+
+
+        Parent root =
+                loader.load();
+
+
+        Scene scene =
+                new Scene(
+                        root,
+                        1280,
+                        800
+                );
+
+
+        stage.setTitle(
+                "Orbit AI"
         );
 
-        Parent root = loader.load();
 
-        Scene scene = new Scene(root, 1280, 800);
+        stage.setScene(
+                scene
+        );
 
-        stage.setTitle("Orbit AI");
-        stage.setScene(scene);
-        stage.setMinWidth(960);
-        stage.setMinHeight(620);
+
+        stage.setMinWidth(
+                960
+        );
+
+
+        stage.setMinHeight(
+                620
+        );
+
+
         stage.show();
     }
 
-    public static void main(String[] args) {
+
+    public static void main(
+            String[] args
+    ) {
+
         launch(args);
     }
 }

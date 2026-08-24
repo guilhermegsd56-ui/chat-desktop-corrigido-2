@@ -589,6 +589,18 @@ function addMessage(role, text) {
     );
 
 
+    const actions =
+        createMessageActions(text || '');
+
+    if (actions) {
+
+        wrap.appendChild(
+            actions
+        );
+
+    }
+
+
     messagesEl.appendChild(
         wrap
     );
@@ -598,6 +610,256 @@ function addMessage(role, text) {
 
 
     return bubble;
+}
+
+
+/* =========================================================
+   AÇÕES DA MENSAGEM (COPIAR)
+   ========================================================= */
+
+function createMessageActions(text) {
+
+    if (!text) {
+        return null;
+    }
+
+    const actions =
+        document.createElement('div');
+
+    actions.className =
+        'msg-actions';
+
+    const copyBtn =
+        document.createElement('button');
+
+    copyBtn.type =
+        'button';
+
+    copyBtn.className =
+        'copy-btn';
+
+    copyBtn.setAttribute(
+        'aria-label',
+        'Copiar mensagem'
+    );
+
+    copyBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M5 15H4C3.44772 15 3 14.5523 3 14V4C3 3.44772 3.44772 3 4 3H14C14.5523 3 15 3.44772 15 4V5" stroke="currentColor" stroke-width="1.8"/>
+        </svg>
+        <span class="copy-label">Copiar</span>
+    `;
+
+    copyBtn.addEventListener(
+        'click',
+        () => {
+
+            copyMessageText(
+                text,
+                copyBtn
+            );
+
+        }
+    );
+
+    actions.appendChild(
+        copyBtn
+    );
+
+    return actions;
+}
+
+
+/* =========================================================
+   COPIAR TEXTO PARA A ÁREA DE TRANSFERÊNCIA
+   ========================================================= */
+
+function copyMessageText(text, btn) {
+
+    const onSuccess = () => {
+
+        showCopyFeedback(
+            btn,
+            true
+        );
+
+    };
+
+    const onError = () => {
+
+        showCopyFeedback(
+            btn,
+            false
+        );
+
+    };
+
+
+    if (
+        navigator.clipboard &&
+        navigator.clipboard.writeText
+    ) {
+
+        navigator.clipboard
+            .writeText(text)
+            .then(onSuccess)
+            .catch(() => {
+
+                if (fallbackCopy(text)) {
+
+                    onSuccess();
+
+                } else {
+
+                    onError();
+
+                }
+
+            });
+
+    } else {
+
+        if (fallbackCopy(text)) {
+
+            onSuccess();
+
+        } else {
+
+            onError();
+
+        }
+
+    }
+}
+
+
+/* =========================================================
+   FALLBACK DE CÓPIA (sem clipboard API)
+   ========================================================= */
+
+function fallbackCopy(text) {
+
+    try {
+
+        const textarea =
+            document.createElement('textarea');
+
+        textarea.value =
+            text;
+
+        textarea.style.position =
+            'fixed';
+
+        textarea.style.opacity =
+            '0';
+
+        document.body.appendChild(
+            textarea
+        );
+
+        textarea.focus();
+        textarea.select();
+
+        const ok =
+            document.execCommand('copy');
+
+        document.body.removeChild(
+            textarea
+        );
+
+        return ok;
+
+    } catch (error) {
+
+        console.error(
+            'Falha no fallback de cópia:',
+            error
+        );
+
+        return false;
+
+    }
+}
+
+
+/* =========================================================
+   FEEDBACK VISUAL DE CÓPIA
+   ========================================================= */
+
+function showCopyFeedback(btn, success) {
+
+    if (!btn) {
+        return;
+    }
+
+    const label =
+        btn.querySelector('.copy-label');
+
+    if (!label) {
+        return;
+    }
+
+    const originalText =
+        'Copiar';
+
+    if (btn._copyTimeout) {
+
+        clearTimeout(
+            btn._copyTimeout
+        );
+
+    }
+
+    if (success) {
+
+        label.textContent =
+            'Copiado!';
+
+        btn.classList.add(
+            'copied'
+        );
+
+    } else {
+
+        label.textContent =
+            'Erro ao copiar';
+
+    }
+
+    const actions =
+        btn.closest('.msg-actions');
+
+    if (actions) {
+
+        actions.classList.add(
+            'is-visible'
+        );
+
+    }
+
+    btn._copyTimeout =
+        setTimeout(
+            () => {
+
+                label.textContent =
+                    originalText;
+
+                btn.classList.remove(
+                    'copied'
+                );
+
+                if (actions) {
+
+                    actions.classList.remove(
+                        'is-visible'
+                    );
+
+                }
+
+            },
+            1600
+        );
 }
 
 

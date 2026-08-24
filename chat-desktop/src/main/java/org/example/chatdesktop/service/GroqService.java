@@ -1,35 +1,27 @@
 package org.example.chatdesktop.service;
 
-import org.example.chatdesktop.config.GroqConfig;
-import org.example.chatdesktop.model.ChatMessage;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import org.example.chatdesktop.config.GroqConfig;
+import org.example.chatdesktop.model.ChatMessage;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * Fala com a API da Groq. Essa é a ÚNICA parte do projeto que deve
- * conhecer a chave de API — o front-end (WebView) nunca tem acesso a ela.
- */
 public class GroqService {
 
     private final HttpClient httpClient;
     private final Gson gson;
+    private final String apiKey;
 
     public GroqService() {
-
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(20))
-                .build();
-
+        this.apiKey = GroqConfig.getApiKey();
+        this.httpClient = HttpClient.newHttpClient();
         this.gson = new Gson();
     }
 
@@ -37,126 +29,97 @@ public class GroqService {
             List<ChatMessage> historico
     ) {
 
-        try {
+        JsonObject body = new JsonObject();
 
-            String json = criarRequest(historico);
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(GroqConfig.API_URL))
-                    .timeout(Duration.ofSeconds(60))
-                    .header(
-                            "Authorization",
-                            "Bearer " + GroqConfig.getApiKey()
-                    )
-                    .header(
-                            "Content-Type",
-                            "application/json"
-                    )
-                    .POST(
-                            HttpRequest.BodyPublishers.ofString(json)
-                    )
-                    .build();
-
-            return httpClient
-                    .sendAsync(
-                            request,
-                            HttpResponse.BodyHandlers.ofString()
-                    )
-                    .thenApply(this::processarResposta);
-
-        } catch (Exception erro) {
-
-            return CompletableFuture.failedFuture(erro);
-        }
-    }
-
-    private String criarRequest(
-            List<ChatMessage> historico
-    ) {
-
-        JsonObject request = new JsonObject();
-
-        request.addProperty(
+        body.addProperty(
                 "model",
                 GroqConfig.MODEL
         );
 
+        body.addProperty(
+                "stream",
+                false
+        );
+
         JsonArray messages = new JsonArray();
 
-        for (ChatMessage mensagem : historico) {
+        for (ChatMessage message : historico) {
 
-            JsonObject message = new JsonObject();
+            JsonObject item = new JsonObject();
 
-            message.addProperty(
+            item.addProperty(
                     "role",
-                    mensagem.getRole()
+                    message.getRole()
             );
 
-            message.addProperty(
+            item.addProperty(
                     "content",
-                    mensagem.getContent()
+                    message.getContent()
             );
 
-            messages.add(message);
+            messages.add(item);
         }
 
-        request.add(
+        body.add(
                 "messages",
                 messages
         );
 
-        request.addProperty("temperature", 0.7);
+        HttpRequest request =
+                HttpRequest.newBuilder()
+                        .uri(
+                                URI.create(
+                                        GroqConfig.API_URL
+                                )
+                        )
+                        .header(
+                                "Content-Type",
+                                "application/json"
+                        )
+                        .header(
+                                "Authorization",
+                                "Bearer " + apiKey
+                        )
+                        .POST(
+                                HttpRequest.BodyPublishers.ofString(
+                                        gson.toJson(body)
+                                )
+                        )
+                        .build();
 
-        return gson.toJson(request);
-    }
+        return httpClient
+                .sendAsync(
+                        request,
+                        HttpResponse.BodyHandlers.ofString()
+                )
+                .thenApply(response -> {
 
-    private String processarResposta(
-            HttpResponse<String> response
-    ) {
+                    if (
+                            response.statusCode() < 200 ||
+                                    response.statusCode() >= 300
+                    ) {
 
-        if (response.statusCode() < 200
-                || response.statusCode() >= 300) {
+                        throw new RuntimeException(
+                                "Erro da Groq HTTP "
+                                        + response.statusCode()
+                                        + ": "
+                                        + response.body()
+                        );
+                    }
 
-            throw new RuntimeException(
-                    "Erro ao chamar a Groq. "
-                            + "Status: "
-                            + response.statusCode()
-                            + "\n"
-                            + response.body()
-            );
-        }
+                    JsonObject json =
+                            gson.fromJson(
+                                    response.body(),
+                                    JsonObject.class
+                            );
 
-        JsonObject json = JsonParser
-                .parseString(response.body())
-                .getAsJsonObject();
-
-        JsonArray choices =
-                json.getAsJsonArray("choices");
-
-        if (choices == null || choices.isEmpty()) {
-
-            throw new RuntimeException(
-                    "A Groq não retornou nenhuma resposta."
-            );
-        }
-
-        JsonObject choice =
-                choices.get(0)
-                        .getAsJsonObject();
-
-        JsonObject message =
-                choice.getAsJsonObject("message");
-
-        if (message == null
-                || !message.has("content")) {
-
-            throw new RuntimeException(
-                    "A resposta da Groq não possui conteúdo."
-            );
-        }
-
-        return message
-                .get("content")
-                .getAsString();
+                    return json
+                            .getAsJsonArray("choices")
+                            .get(0)
+                            .getAsJsonObject()
+                            .getAsJsonObject("message")
+                            .get("content")
+                            .getAsString();
+                });
     }
 }
