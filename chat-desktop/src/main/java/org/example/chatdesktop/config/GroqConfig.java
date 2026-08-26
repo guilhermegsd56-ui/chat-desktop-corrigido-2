@@ -1,26 +1,25 @@
 package org.example.chatdesktop.config;
 
-public final class GroqConfig {
+public class GroqConfig {
 
-    private GroqConfig() {
-    }
+    // URL oficial da API da Groq (compatível com OpenAI)
+    public static final String API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-    public static final String API_URL =
-            "https://api.groq.com/openai/v1/chat/completions";
-
-    public static final String MODEL =
-            "openai/gpt-oss-20b";
+    // llama-3.3-70b-versatile foi DESATIVADO pela Groq em 16/08/2026.
+    // Modelo recomendado pela própria Groq como substituto: openai/gpt-oss-120b
+    public static final String MODEL = "openai/gpt-oss-120b";
 
     public static String getApiKey() {
-
         String apiKey = System.getenv("GROQ_API_KEY");
 
-        if (apiKey == null || apiKey.isBlank()) {
-            throw new IllegalStateException(
-                    "A variável de ambiente GROQ_API_KEY não foi configurada."
-            );
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            apiKey = "SUA_CHAVE_DA_GROQ_AQUI";
         }
 
-        return apiKey.trim();
+        if (apiKey == null || apiKey.trim().isEmpty() || apiKey.equals("SUA_CHAVE_DA_GROQ_AQUI")) {
+            throw new IllegalStateException("A chave da API Groq não foi configurada corretamente.");
+        }
+
+        return apiKey;
     }
 }
