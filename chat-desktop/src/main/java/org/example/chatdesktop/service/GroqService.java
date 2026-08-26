@@ -1,214 +1,144 @@
-package org.example.chatdesktop;
+package org.example.chatdesktop.service;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.example.chatdesktop.config.GroqConfig;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 
 public class GroqService {
 
-    /*
-     * NÃO coloque uma chave real no GitHub.
-     *
-     * O ideal é criar uma variável de ambiente:
-     *
-     * GROQ_API_KEY = sua_chave
-     *
-     * Caso queira testar localmente rapidamente,
-     * você pode colocar a chave diretamente abaixo.
-     */
-    private static final String API_KEY = System.getenv("GROQ_API_KEY");
-
-    private static final String API_URL =
-            "https://api.groq.com/openai/v1/chat/completions";
-
-    /*
-     * Modelo utilizado pela API da Groq.
-     */
-    private static final String MODEL =
-            "llama-3.3-70b-versatile";
-
+    private final String apiKey;
     private final HttpClient httpClient;
+    private final Gson gson;
 
     public GroqService() {
+        String key;
+        try {
+            key = GroqConfig.getApiKey();
+        } catch (IllegalStateException e) {
+            key = null;
+        }
+        apiKey = key;
+
         httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(20))
+                .connectTimeout(Duration.ofSeconds(30))
                 .build();
+
+        gson = new Gson();
     }
 
-    public String chat(String mensagem) {
-
-        if (mensagem == null || mensagem.isBlank()) {
-            return "Digite uma pergunta antes de enviar.";
+    public String chat(String pergunta) throws Exception {
+        if (pergunta == null || pergunta.trim().isEmpty()) {
+            return "Digite uma pergunta para o Orbit.";
         }
 
-        if (API_KEY == null || API_KEY.isBlank()) {
-            return "Erro: a chave da Groq não foi configurada.";
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            throw new IOException("A chave da API não foi configurada.");
         }
 
+        JsonObject body = new JsonObject();
+        body.addProperty("model", GroqConfig.MODEL);
+        body.addProperty("temperature", 0.7);
+        body.addProperty("max_tokens", 2048);
+
+        JsonArray messages = new JsonArray();
+
+        JsonObject system = new JsonObject();
+        system.addProperty("role", "system");
+        system.addProperty(
+                "content",
+                "Você é o Orbit, uma inteligência artificial profissional. " +
+                        "Responda em português do Brasil, de forma clara, objetiva e útil."
+        );
+        messages.add(system);
+
+        JsonObject user = new JsonObject();
+        user.addProperty("role", "user");
+        user.addProperty("content", pergunta.trim());
+        messages.add(user);
+
+        body.add("messages", messages);
+
+        String json = gson.toJson(body);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(GroqConfig.API_URL))
+                .timeout(Duration.ofSeconds(60))
+                .header("Authorization", "Bearer " + apiKey)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .build();
+
+        HttpResponse<String> response;
+
+        // ===== PARTE 1: TRATAMENTO DE ERROS DE REDE =====
         try {
-
-            JsonObject body = new JsonObject();
-
-            body.addProperty("model", MODEL);
-
-            JsonArray messages = new JsonArray();
-
-            JsonObject systemMessage = new JsonObject();
-            systemMessage.addProperty(
-                    "role",
-                    "system"
-            );
-            systemMessage.addProperty(
-                    "content",
-                    """
-                    Você é o Orbit AI, um assistente inteligente,
-                    profissional, claro e objetivo.
-
-                    Responda sempre em português do Brasil.
-
-                    Explique os assuntos de forma simples quando
-                    necessário e mantenha respostas organizadas.
-                    """
-            );
-
-            JsonObject userMessage = new JsonObject();
-            userMessage.addProperty(
-                    "role",
-                    "user"
-            );
-            userMessage.addProperty(
-                    "content",
-                    mensagem
-            );
-
-            messages.add(systemMessage);
-            messages.add(userMessage);
-
-            body.add("messages", messages);
-
-            body.addProperty(
-                    "temperature",
-                    0.7
-            );
-
-            body.addProperty(
-                    "max_tokens",
-                    2048
-            );
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(API_URL))
-                    .timeout(Duration.ofSeconds(60))
-                    .header(
-                            "Content-Type",
-                            "application/json"
-                    )
-                    .header(
-                            "Authorization",
-                            "Bearer " + API_KEY
-                    )
-                    .POST(
-                            HttpRequest.BodyPublishers.ofString(
-                                    body.toString()
-                            )
-                    )
-                    .build();
-
-            HttpResponse<String> response =
-                    httpClient.send(
-                            request,
-                            HttpResponse.BodyHandlers.ofString()
-                    );
-
-            int status = response.statusCode();
-
-            if (status == 200) {
-                return extrairResposta(response.body());
-            }
-
-            if (status == 401) {
-                return "Erro: a chave da API da Groq é inválida ou expirou.";
-            }
-
-            if (status == 429) {
-                return "Limite da API atingido. Aguarde alguns segundos e tente novamente.";
-            }
-
-            if (status == 400) {
-                return "A solicitação enviada para a IA é inválida.";
-            }
-
-            if (status == 403) {
-                return "A API recusou o acesso. Verifique sua chave e permissões.";
-            }
-
-            if (status >= 500) {
-                return "A Groq está apresentando uma falha temporária. Tente novamente.";
-            }
-
-            return "Erro na comunicação com a IA. Código: " + status;
-
+            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (ConnectException | UnknownHostException e) {
+            throw new IOException("Sem conexão com a internet. Verifique sua rede e tente novamente.");
+        } catch (HttpTimeoutException e) {
+            throw new IOException("A requisição demorou demais para responder. Tente novamente.");
         } catch (IOException e) {
-
-            return "Sem conexão com a internet. Verifique sua conexão e tente novamente.";
-
-        } catch (InterruptedException e) {
-
-            Thread.currentThread().interrupt();
-
-            return "A comunicação com a IA foi interrompida.";
-
-        } catch (Exception e) {
-
-            return "Ocorreu um erro inesperado ao conversar com o Orbit.";
+            throw new IOException("Falha na comunicação com o servidor da Groq. Tente novamente.");
         }
+
+        int status = response.statusCode();
+
+        if (status == 200) {
+            return extrairResposta(response.body());
+        }
+
+        if (status == 401) {
+            throw new IOException("A chave da Groq é inválida ou expirou.");
+        }
+
+        if (status == 429) {
+            throw new IOException("Limite da API atingido. Tente novamente.");
+        }
+
+        if (status == 403) {
+            throw new IOException("A API recusou o acesso.");
+        }
+
+        if (status >= 500) {
+            throw new IOException("O servidor da Groq está indisponível.");
+        }
+
+        throw new IOException("Erro da API. Código HTTP: " + status);
     }
 
     private String extrairResposta(String json) {
-
         try {
-
-            JsonObject resposta =
-                    JsonParser.parseString(json)
-                            .getAsJsonObject();
-
-            JsonArray choices =
-                    resposta.getAsJsonArray("choices");
+            JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+            JsonArray choices = root.getAsJsonArray("choices");
 
             if (choices == null || choices.isEmpty()) {
-                return "A IA não retornou nenhuma resposta.";
+                return "A IA não retornou resposta.";
             }
 
-            JsonObject primeiraEscolha =
-                    choices.get(0).getAsJsonObject();
+            JsonObject choice = choices.get(0).getAsJsonObject();
+            JsonObject message = choice.getAsJsonObject("message");
 
-            JsonObject message =
-                    primeiraEscolha
-                            .getAsJsonObject("message");
-
-            if (message == null) {
-                return "A IA retornou uma resposta inválida.";
-            }
-
-            if (!message.has("content")) {
+            if (message == null || !message.has("content")) {
                 return "A IA não retornou conteúdo.";
             }
 
-            return message
-                    .get("content")
-                    .getAsString()
-                    .trim();
+            return message.get("content").getAsString();
 
         } catch (Exception e) {
-
-            return "Não foi possível interpretar a resposta da IA.";
+            e.printStackTrace();
+            return "Erro ao interpretar a resposta da IA.";
         }
     }
 }

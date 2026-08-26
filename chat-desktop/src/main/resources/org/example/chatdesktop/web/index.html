@@ -3,123 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orbit — Inteligência em movimento</title>
-<link rel="stylesheet" href="style.css">
+    <title>Orbit AI</title>
+    <link rel="stylesheet" href="style.css">
+    <link id="themeStyle" rel="stylesheet" href="themes/dark.css">
 </head>
 <body>
 <div id="app">
-    <div class="bg-layer"></div>
-    <div class="vignette"></div>
-    <div class="grain"></div>
 
-    <!-- Top Header with Logo and Profile Button -->
-    <header class="top-header">
-        <button class="logo" id="logoBtn" type="button"><span></span>ORBIT</button>
-        <button class="profile-btn" id="profileBtn" type="button">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Perfil
-        </button>
-    </header>
+    <!-- ===== PARTE 5: BARRA LATERAL ===== -->
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <button id="logoBtn" class="logo" type="button"><span class="dot"></span>ORBIT</button>
+            <button id="sidebarNewChat" class="new-chat-btn" type="button">+ Nova conversa</button>
+        </div>
+        <div class="sidebar-history">
+            <div class="hist-label">HISTÓRICO</div>
+            <div id="historyList">
+                <div id="historyEmpty" class="hist-empty">Nenhuma conversa ainda.</div>
+            </div>
+        </div>
+        <div class="sidebar-bottom">
+            <button id="themeToggle" class="side-btn" type="button">
+                <span id="themeIcon">☀</span> <span id="themeText">Tema claro</span>
+            </button>
+            <button id="sidebarProfileBtn" class="side-btn" type="button">👤 Perfil</button>
+        </div>
+    </aside>
 
-    <!-- ===== HOME VIEW ===== -->
-    <div class="view active" id="view-home">
-        <div class="home-inner">
+    <main class="main">
+        <header class="topbar">
+            <div class="status-pill"><span class="dot online"></span><span id="stateLabel">online</span></div>
+            <div id="chatTitle" class="chat-title">NOVA CONVERSA</div>
+            <div class="msg-count">Msgs: <span id="convCount">0</span></div>
+        </header>
+
+        <!-- ===== BASE: TELA HOME + ORBE (correção visual) ===== -->
+        <div id="view-home" class="view active">
             <div class="orbit-stage">
                 <div class="orbit-ai idle" id="orbitAI">
-                    <div class="blob-wrap">
-                        <div class="blob"></div>
-                        <div class="blob b2"></div>
-                        <div class="blob core"></div>
-                    </div>
+                    <div class="blob-wrap"><div class="blob"></div><div class="blob b2"></div><div class="blob core"></div></div>
                 </div>
             </div>
-
             <section class="hero">
                 <div class="eyebrow">Orbit AI</div>
                 <h1 class="hero-title">Bem-vindo ao <span class="grad">Orbit!</span><br>Faça suas perguntas<br>que iremos resolver.</h1>
-                <p class="hero-desc">Uma inteligência viva, feita para orientar, esclarecer e resolver — em tempo real, com precisão e clareza.</p>
-
-                <form class="ask-bar" id="homeAskBar" autocomplete="off">
+                <p class="hero-desc">Uma inteligência viva, feita para orientar, esclarecer e resolver — em tempo real.</p>
+                <form id="homeAskBar" class="ask-bar" autocomplete="off">
                     <input type="text" id="homeAskInput" placeholder="Faça uma pergunta ao Orbit..." />
-                    <button type="submit" class="send-btn" aria-label="Enviar pergunta">
+                    <button type="submit" class="send-btn" aria-label="Enviar">
                         <svg viewBox="0 0 24 24" fill="none"><path d="M4 12H20M20 12L14 6M20 12L14 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
                 </form>
-
                 <div class="quick-row">
                     <div class="pill" data-q="Como funciona o Orbit?">Como funciona o Orbit?</div>
                     <div class="pill" data-q="O que você pode fazer por mim?">O que você pode fazer?</div>
-                    <div class="pill" data-q="Preciso de ajuda para organizar minhas ideias.">Falar com o Orbit</div>
                 </div>
             </section>
         </div>
-        <div class="status"><span class="dot"></span>Orbit está online</div>
-    </div>
 
-    <!-- ===== CHAT VIEW ===== -->
-    <div class="view" id="view-chat">
-        <div class="chat-shell">
-            <div class="chat-header">
-                <div class="mini-orbit" id="miniOrbit">
-                    <div class="blob-wrap">
-                        <div class="blob"></div>
-                        <div class="blob b2"></div>
-                        <div class="blob core"></div>
-                    </div>
-                </div>
-                <div class="chat-header-text">
-                    <div class="name">Orbit</div>
-                    <div class="state-label" id="stateLabel">online</div>
-                </div>
-                <button class="back-btn" id="newChatBtn" type="button">+ Nova conversa</button>
-                <button class="back-btn" id="backHomeBtn" type="button">← Início</button>
-            </div>
-
-            <div class="messages" id="messages">
-                <div class="empty-chat" id="emptyChat">
-                    <div class="big-orbit">
-                        <div class="blob-wrap">
-                            <div class="blob"></div>
-                            <div class="blob b2"></div>
-                            <div class="blob core"></div>
-                        </div>
-                    </div>
+        <!-- ===== TELA DE CHAT (usa PARTE 4: balões) ===== -->
+        <div id="view-chat" class="view">
+            <div id="messages" class="messages">
+                <div id="emptyChat" class="empty-chat">
+                    <div class="mini-orbit"><div class="blob-wrap"><div class="blob"></div><div class="blob b2"></div><div class="blob core"></div></div></div>
                     <p>Envie uma mensagem para começar a conversar com o Orbit.</p>
                 </div>
             </div>
-
-            <form class="chat-ask-bar" id="chatAskBar" autocomplete="off">
-                <input type="text" id="chatAskInput" placeholder="Escreva sua mensagem..." />
-                <button type="submit" class="send-btn" id="chatSendBtn" aria-label="Enviar mensagem">
+            <form id="chatAskBar" class="ask-bar chat-ask-bar" autocomplete="off">
+                <input type="text" id="chatAskInput" placeholder="Mensagem para o Orbit..." />
+                <button type="submit" class="send-btn" id="chatSendBtn" aria-label="Enviar">
                     <svg viewBox="0 0 24 24" fill="none"><path d="M4 12H20M20 12L14 6M20 12L14 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </button>
             </form>
         </div>
-    </div>
 
-    <!-- ===== PROFILE VIEW ===== -->
-    <div class="view" id="view-profile">
-        <div class="profile-card">
-            <div class="profile-avatar">
-                <div class="blob-wrap">
-                    <div class="blob"></div>
-                    <div class="blob b2"></div>
-                    <div class="blob core"></div>
-                </div>
-            </div>
-            <h2>Seu perfil</h2>
-            <div class="sub">Conta conectada ao Orbit</div>
-            <div class="profile-fields">
-                <div class="profile-field"><span class="k">Nome</span><span class="v">Visitante</span></div>
-                <div class="profile-field"><span class="k">Plano</span><span class="v">Gratuito</span></div>
-                <div class="profile-field"><span class="k">Conversas hoje</span><span class="v" id="convCount">0</span></div>
-                <div class="profile-field"><span class="k">Status</span><span class="v">Online</span></div>
-            </div>
-            <button class="back-btn" id="backHomeBtn2" type="button">← Voltar ao início</button>
+        <div id="view-profile" class="view profile-view">
+            <h2>Configurações de Perfil</h2>
+            <p class="muted">Preferências da sua aplicação Orbit AI Desktop.</p>
+            <button id="backHomeBtn" class="side-btn" type="button">← Voltar ao início</button>
         </div>
-    </div>
+    </main>
 </div>
-
 <script src="script.js"></script>
 </body>
 </html>

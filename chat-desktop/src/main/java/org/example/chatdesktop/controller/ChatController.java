@@ -1,127 +1,169 @@
 package org.example.chatdesktop.controller;
 
-import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import netscape.javascript.JSObject;
+
 import org.example.chatdesktop.bridge.JSBridge;
+
+import java.io.IOException;
 
 public class ChatController {
 
-    @FXML
-    private WebView webView;
+    @FXML private WebView webView;
+    @FXML private TextField messageInput;
+    @FXML private TextArea textArea;
+    @FXML private Button sendButton;
+    @FXML private Button newConversationButton;
+    @FXML private Button clearButton;
+    @FXML private VBox messagesContainer;
 
-    private JSBridge jsBridge;
+    private WebEngine engine;
+    private JSBridge bridge;
 
     @FXML
     public void initialize() {
+        if (webView != null) {
+            engine = webView.getEngine();
+            bridge = new JSBridge(engine);
 
-        WebEngine engine = webView.getEngine();
+            try {
+                engine.getLoadWorker()
+                        .stateProperty()
+                        .addListener((observable, oldState, newState) -> {
+                            if (newState == javafx.concurrent.Worker.State.SUCCEEDED) {
+                                configurarBridge();
+                            }
+                        });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
-        engine.setJavaScriptEnabled(true);
+        configurarAtalhos();
+    }
 
-        System.out.println("WebView iniciada.");
+    private void configurarBridge() {
+        if (engine == null || bridge == null) return;
 
-        engine.getLoadWorker()
-                .stateProperty()
-                .addListener((observable, oldState, newState) -> {
+        try {
+            JSObject window = (JSObject) engine.executeScript("window");
+            // Injeta o objeto exatamente com o nome que o script.js procura
+            window.setMember("orbitBridge", bridge);
+            // Informa ao JS que a ponte está pronta para uso
+            engine.executeScript("window.orbitBridgeReady = true;");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-                    System.out.println(
-                            "Estado WebView: " + newState
-                    );
+    private void configurarAtalhos() {
+        if (messageInput == null) return;
 
-                    if (newState == Worker.State.SUCCEEDED) {
+        messageInput.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.ENTER && !event.isShiftDown()) {
+                enviarMensagem();
+                event.consume();
+            }
 
-                        System.out.println(
-                                "HTML carregado com sucesso."
-                        );
+            if (event.isControlDown() && event.getCode() == KeyCode.L) {
+                limparCampo();
+                event.consume();
+            }
+        });
+    }
 
-                        try {
+    @FXML
+    private void enviarMensagem() {
+        if (messageInput == null) return;
 
-                            /*
-                             * Cria a ponte Java ↔ JavaScript.
-                             */
-                            jsBridge =
-                                    new JSBridge(engine);
+        String mensagem = messageInput.getText().trim();
+        if (mensagem.isEmpty()) return;
 
-
-                            /*
-                             * Obtém o objeto window do JavaScript.
-                             */
-                            JSObject window =
-                                    (JSObject) engine.executeScript(
-                                            "window"
-                                    );
-
-
-                            /*
-                             * Disponibiliza o JSBridge para o JavaScript.
-                             */
-                            window.setMember(
-                                    "javaBridge",
-                                    jsBridge
-                            );
-
-
-                            /*
-                             * Informa ao JavaScript que
-                             * a ponte está pronta.
-                             */
-                            engine.executeScript(
-                                    "window.javaBridgeReady = true;"
-                            );
-
-
-                            /*
-                             * Remove a mensagem de inicialização.
-                             */
-                            engine.executeScript(
-                                    """
-                                    if (typeof window.orbitReady === 'function') {
-                                        window.orbitReady();
-                                    }
-                                    """
-                            );
-
-
-                            System.out.println(
-                                    "JSBridge configurado com sucesso."
-                            );
-
-                        } catch (Exception e) {
-
-                            System.err.println(
-                                    "Erro ao configurar JSBridge:"
-                            );
-
-                            e.printStackTrace();
-                        }
-                    }
-                });
-
-
-        /*
-         * Carrega o HTML.
-         */
-        var resource =
-                getClass().getResource(
-                        "/org/example/chatdesktop/web/index.html"
-                );
-
-
-        if (resource == null) {
-
-            System.err.println(
-                    "ERRO: index.html não encontrado."
-            );
-
+        if (bridge == null) {
+            System.err.println("JSBridge não foi inicializado.");
             return;
         }
 
+        bridge.ask(mensagem);
+        messageInput.clear();
+    }
 
-        engine.load(
-                resource.toExternalForm()
-        );
+    @FXML
+    private void novaConversa() {
+        if (bridge != null) {
+            bridge.newConversation();
+        } else if (messageInput != null) {
+            messageInput.clear();
+        }
+    }
+
+    @FXML
+    private void limparCampo() {
+        if (messageInput != null) {
+            messageInput.clear();
+            messageInput.requestFocus();
+        }
+        if (bridge != null) {
+            bridge.clearInput();
+        }
+    }
+
+    @FXML
+    private void voltarInicio(javafx.event.ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/org/example/chatdesktop/view/index.fxml")
+            );
+            Parent root = loader.load();
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            Scene scene = new Scene(root, 1280, 720);
+            stage.setScene(scene);
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void temaEscuro() {
+        if (bridge != null) bridge.changeTheme("dark");
+    }
+
+    @FXML
+    private void temaClaro() {
+        if (bridge != null) bridge.changeTheme("light");
+    }
+
+    @FXML
+    private void alternarTema() {
+        if (bridge == null) return;
+        bridge.changeTheme("light");
+    }
+
+    public WebEngine getEngine() {
+        return engine;
+    }
+
+    public JSBridge getBridge() {
+        return bridge;
+    }
+
+    public void carregarPagina(String url) {
+        if (engine == null) return;
+        if (url == null || url.isBlank()) return;
+        engine.load(url);
     }
 }

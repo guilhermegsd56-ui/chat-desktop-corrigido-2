@@ -1,0 +1,10 @@
+/* themes/dark.css */
+:root{
+    --bg:#07050d; --bg-elevated:#0d0a17;
+    --surface:#12101d; --surface-2:#171421; --surface-3:#1c1828;
+    --border:rgba(255,255,255,.08); --border-strong:rgba(255,255,255,.14);
+    --text:#ffffff; --text-soft:#d9d6e3; --muted:#8d8899;
+    --purple:#6a00ff; --purple-light:#b84dff; --magenta:#ff00c8; --pink-light:#ff78e5; --blue:#4b6bff;
+    --success:#53d769; --danger:#ff5f5f;
+    --user-bubble:#241f37; --orbit-bubble:#15121f; --shadow:rgba(0,0,0,.45);
+}

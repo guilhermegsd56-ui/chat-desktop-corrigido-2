@@ -1,1472 +1,186 @@
-/* =========================================================
-   ORBIT AI
-   SISTEMA DE NAVEGAÇÃO + CHAT
-   ========================================================= */
+/* ===== BASE: referências e navegação de telas ===== */
+const themeStyle=document.getElementById("themeStyle"),themeToggle=document.getElementById("themeToggle"),
+    themeText=document.getElementById("themeText"),themeIcon=document.getElementById("themeIcon");
+const sidebarNewChat=document.getElementById("sidebarNewChat"),sidebarProfileBtn=document.getElementById("sidebarProfileBtn"),
+    logoBtn=document.getElementById("logoBtn"),backHomeBtn=document.getElementById("backHomeBtn");
+const historyList=document.getElementById("historyList"),historyEmpty=document.getElementById("historyEmpty"),
+    chatTitle=document.getElementById("chatTitle"),convCount=document.getElementById("convCount");
+const messagesEl=document.getElementById("messages"),emptyChat=document.getElementById("emptyChat");
+const chatAskBar=document.getElementById("chatAskBar"),chatAskInput=document.getElementById("chatAskInput"),chatSendBtn=document.getElementById("chatSendBtn");
+const homeAskBar=document.getElementById("homeAskBar"),homeAskInput=document.getElementById("homeAskInput");
+const stateLabel=document.getElementById("stateLabel"),orbitAI=document.getElementById("orbitAI");
 
+let currentView="home",busy=false,conversationTitle="",conversations=[],conversationCounter=0,totalMessages=0;
 
-/* =========================================================
-   ELEMENTOS
-   ========================================================= */
+function showView(name){
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    const t=document.getElementById("view-"+name);
+    if(t){t.classList.add("active");currentView=name;if(name==="chat")setTimeout(()=>chatAskInput.focus(),150);}
+}
+logoBtn.addEventListener("click",()=>showView("home"));
+sidebarProfileBtn.addEventListener("click",()=>showView("profile"));
+if(backHomeBtn)backHomeBtn.addEventListener("click",()=>showView("home"));
 
-const views = document.querySelectorAll('.view');
-
-const logoBtn = document.getElementById('logoBtn');
-const profileBtn = document.getElementById('profileBtn');
-
-const backHomeBtn = document.getElementById('backHomeBtn');
-const backHomeBtn2 = document.getElementById('backHomeBtn2');
-
-const newChatBtn = document.getElementById('newChatBtn');
-
-
-/* =========================================================
-   HOME
-   ========================================================= */
-
-const orbit = document.getElementById('orbitAI');
-
-const homeAskBar =
-    document.getElementById('homeAskBar');
-
-const homeAskInput =
-    document.getElementById('homeAskInput');
-
-
-/* =========================================================
-   CHAT
-   ========================================================= */
-
-const messagesEl =
-    document.getElementById('messages');
-
-const originalEmptyChat =
-    document.getElementById('emptyChat');
-
-const chatAskBar =
-    document.getElementById('chatAskBar');
-
-const chatAskInput =
-    document.getElementById('chatAskInput');
-
-const chatSendBtn =
-    document.getElementById('chatSendBtn');
-
-const stateLabel =
-    document.getElementById('stateLabel');
-
-const miniOrbit =
-    document.getElementById('miniOrbit');
-
-const convCountEl =
-    document.getElementById('convCount');
-
-
-/* =========================================================
-   ESTADO
-   ========================================================= */
-
-let currentView = 'home';
-
-let turns = 0;
-
-let busy = false;
-
-
-/*
- * Guarda uma cópia do estado inicial do chat.
- *
- * Assim, quando o usuário clicar em "Nova conversa",
- * não precisamos reaproveitar uma referência antiga do DOM.
- */
-
-const emptyChatTemplate =
-    originalEmptyChat
-        ? originalEmptyChat.cloneNode(true)
-        : null;
-
-
-/* =========================================================
-   NAVEGAÇÃO
-   ========================================================= */
-
-function showView(name) {
-
-    const targetId =
-        'view-' + name;
-
-    views.forEach(view => {
-
-        const isTarget =
-            view.id === targetId;
-
-        view.classList.toggle(
-            'active',
-            isTarget
-        );
-
-        view.setAttribute(
-            'aria-hidden',
-            isTarget ? 'false' : 'true'
-        );
-    });
-
-
-    currentView = name;
-
-
-    /*
-     * Pequeno delay para permitir que o WebView
-     * finalize o cálculo do layout antes do focus.
-     */
-
-    if (name === 'chat') {
-
-        requestAnimationFrame(() => {
-
-            refreshChatLayout();
-
-            setTimeout(() => {
-
-                if (
-                    chatAskInput &&
-                    !busy
-                ) {
-                    chatAskInput.focus();
-                }
-
-            }, 150);
-
-        });
-    }
+function setState(state){
+    if(orbitAI){orbitAI.classList.remove("idle","listening","thinking","responding");orbitAI.classList.add(state);}
+    const labels={idle:"online",listening:"digitando...",thinking:"pensando...",responding:"respondendo..."};
+    if(stateLabel)stateLabel.textContent=labels[state]||"online";
 }
 
-
-/* =========================================================
-   HOME
-   ========================================================= */
-
-function goHome() {
-    showView('home');
-
-    if (homeAskInput) {
-
-        setTimeout(() => {
-
-            homeAskInput.focus();
-
-        }, 100);
-    }
-}
-
-
-/* =========================================================
-   EVENTOS DE NAVEGAÇÃO
-   ========================================================= */
-
-if (logoBtn) {
-
-    logoBtn.addEventListener(
-        'click',
-        goHome
-    );
-}
-
-
-if (profileBtn) {
-
-    profileBtn.addEventListener(
-        'click',
-        () => {
-
-            showView('profile');
-
-        }
-    );
-}
-
-
-if (backHomeBtn) {
-
-    backHomeBtn.addEventListener(
-        'click',
-        goHome
-    );
-}
-
-
-if (backHomeBtn2) {
-
-    backHomeBtn2.addEventListener(
-        'click',
-        goHome
-    );
-}
-
-
-/* =========================================================
-   ORBIT HOME STATE
-   ========================================================= */
-
-function setHomeState(state) {
-
-    if (!orbit) {
-        return;
-    }
-
-    orbit.classList.remove(
-        'idle',
-        'listening',
-        'thinking',
-        'responding'
-    );
-
-    orbit.classList.add(state);
-}
-
-
-/* =========================================================
-   HOME INPUT
-   ========================================================= */
-
-if (homeAskInput) {
-
-    homeAskInput.addEventListener(
-        'focus',
-        () => {
-
-            setHomeState('listening');
-
-        }
-    );
-
-
-    homeAskInput.addEventListener(
-        'input',
-        () => {
-
-            setHomeState('listening');
-
-        }
-    );
-
-
-    homeAskInput.addEventListener(
-        'blur',
-        () => {
-
-            if (
-                !homeAskInput.value.trim()
-            ) {
-
-                setHomeState('idle');
-
-            }
-        }
-    );
-}
-
-
-/* =========================================================
-   HOME ASK BAR
-   ========================================================= */
-
-if (homeAskBar) {
-
-    homeAskBar.addEventListener(
-        'submit',
-        event => {
-
-            event.preventDefault();
-
-            const question =
-                homeAskInput
-                    ? homeAskInput.value.trim()
-                    : '';
-
-            if (!question) {
-                return;
-            }
-
-            if (homeAskInput) {
-                homeAskInput.value = '';
-            }
-
-            setHomeState('idle');
-
-            goToChatWith(question);
-
-        }
-    );
-}
-
-
-/* =========================================================
-   QUICK QUESTIONS
-   ========================================================= */
-
-document
-    .querySelectorAll('#view-home .pill')
-    .forEach(pill => {
-
-        pill.addEventListener(
-            'click',
-            () => {
-
-                const question =
-                    pill.dataset.q;
-
-                if (!question) {
-                    return;
-                }
-
-                goToChatWith(question);
-
-            }
-        );
-
-    });
-
-
-/* =========================================================
-   IR PARA CHAT
-   ========================================================= */
-
-function goToChatWith(question) {
-
-    showView('chat');
-
-    /*
-     * Aguarda o layout do chat ser ativado
-     * antes de enviar a mensagem.
-     */
-
-    requestAnimationFrame(() => {
-
-        setTimeout(() => {
-
-            sendMessage(question);
-
-        }, 80);
-
-    });
-}
-
-
-/* =========================================================
-   CHAT STATE
-   ========================================================= */
-
-function setChatState(state) {
-
-    if (miniOrbit) {
-
-        miniOrbit.classList.remove(
-            'idle',
-            'listening',
-            'thinking',
-            'responding'
-        );
-
-        miniOrbit.classList.add(state);
-    }
-
-
-    if (stateLabel) {
-
-        const labels = {
-
-            idle:
-                'online',
-
-            listening:
-                'digitando...',
-
-            thinking:
-                'pensando...',
-
-            responding:
-                'respondendo...'
-
-        };
-
-        stateLabel.textContent =
-            labels[state] || 'online';
-    }
-}
-
-
-/* =========================================================
-   SCROLL
-   ========================================================= */
-
-function scrollToBottom() {
-
-    if (!messagesEl) {
-        return;
-    }
-
-    requestAnimationFrame(() => {
-
-        messagesEl.scrollTop =
-            messagesEl.scrollHeight;
-
-    });
-}
-
-
-/* =========================================================
-   REFRESH DO LAYOUT
-   ========================================================= */
-
-function refreshChatLayout() {
-
-    if (
-        currentView !== 'chat' ||
-        !messagesEl
-    ) {
-        return;
-    }
-
-
-    /*
-     * Força o navegador/WebView a recalcular
-     * as dimensões do container.
-     */
-
-    const shell =
-        document.querySelector('.chat-shell');
-
-    if (!shell) {
-        return;
-    }
-
-
-    requestAnimationFrame(() => {
-
-        const width =
-            shell.offsetWidth;
-
-        const height =
-            shell.offsetHeight;
-
-
-        /*
-         * Apenas leitura das dimensões.
-         *
-         * Isso força o WebView a completar
-         * o cálculo do layout sem remover elementos.
-         */
-
-        void width;
-        void height;
-
-
-        scrollToBottom();
-
-    });
-}
-
-
-/* =========================================================
-   CRIAR NOVO EMPTY CHAT
-   ========================================================= */
-
-function restoreEmptyChat() {
-
-    if (!messagesEl) {
-        return;
-    }
-
-
-    messagesEl.replaceChildren();
-
-
-    if (emptyChatTemplate) {
-
-        const newEmpty =
-            emptyChatTemplate.cloneNode(true);
-
-        newEmpty.id = 'emptyChat';
-
-        messagesEl.appendChild(newEmpty);
-
-    } else {
-
-        /*
-         * Fallback caso o HTML não possua
-         * o emptyChat original.
-         */
-
-        const empty =
-            document.createElement('div');
-
-        empty.className =
-            'empty-chat';
-
-        empty.id =
-            'emptyChat';
-
-        empty.innerHTML = `
-            <div class="big-orbit">
-
-                <div class="blob-wrap">
-
-                    <div class="blob"></div>
-
-                    <div class="blob b2"></div>
-
-                    <div class="blob core"></div>
-
-                </div>
-
-            </div>
-
-            <p>
-                Envie uma mensagem para começar
-                a conversar com o Orbit.
-            </p>
-        `;
-
-        messagesEl.appendChild(empty);
-    }
-}
-
-
-/* =========================================================
-   ADICIONAR MENSAGEM
-   ========================================================= */
-
-function addMessage(role, text) {
-
-    if (!messagesEl) {
-        return null;
-    }
-
-
-    /*
-     * Remove somente o empty state atual.
-     *
-     * Não usamos mais a referência antiga.
-     */
-
-    const currentEmpty =
-        document.getElementById('emptyChat');
-
-    if (currentEmpty) {
-
-        currentEmpty.remove();
-
-    }
-
-
-    const wrap =
-        document.createElement('div');
-
-
-    wrap.className =
-        'msg ' +
-        (
-            role === 'user'
-                ? 'user'
-                : 'orbit'
-        );
-
-
-    const bubble =
-        document.createElement('div');
-
-
-    bubble.className =
-        'bubble';
-
-
-    bubble.textContent =
-        text || '';
-
-
-    wrap.appendChild(
-        bubble
-    );
-
-
-    const actions =
-        createMessageActions(text || '');
-
-    if (actions) {
-
-        wrap.appendChild(
-            actions
-        );
-
-    }
-
-
-    messagesEl.appendChild(
-        wrap
-    );
-
-
-    scrollToBottom();
-
-
-    return bubble;
-}
-
-
-/* =========================================================
-   AÇÕES DA MENSAGEM (COPIAR)
-   ========================================================= */
-
-function createMessageActions(text) {
-
-    if (!text) {
-        return null;
-    }
-
-    const actions =
-        document.createElement('div');
-
-    actions.className =
-        'msg-actions';
-
-    const copyBtn =
-        document.createElement('button');
-
-    copyBtn.type =
-        'button';
-
-    copyBtn.className =
-        'copy-btn';
-
-    copyBtn.setAttribute(
-        'aria-label',
-        'Copiar mensagem'
-    );
-
-    copyBtn.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/>
-            <path d="M5 15H4C3.44772 15 3 14.5523 3 14V4C3 3.44772 3.44772 3 4 3H14C14.5523 3 15 3.44772 15 4V5" stroke="currentColor" stroke-width="1.8"/>
-        </svg>
-        <span class="copy-label">Copiar</span>
-    `;
-
-    copyBtn.addEventListener(
-        'click',
-        () => {
-
-            copyMessageText(
-                text,
-                copyBtn
-            );
-
-        }
-    );
-
-    actions.appendChild(
-        copyBtn
-    );
-
-    return actions;
-}
-
-
-/* =========================================================
-   COPIAR TEXTO PARA A ÁREA DE TRANSFERÊNCIA
-   ========================================================= */
-
-function copyMessageText(text, btn) {
-
-    const onSuccess = () => {
-
-        showCopyFeedback(
-            btn,
-            true
-        );
-
+/* ===== PARTE 2: TEMA CLARO/ESCURO (corrigido para WebView) ===== */
+function applyTheme(theme){
+    theme=(theme==="light")?"light":"dark";
+
+    const novoLink=document.createElement("link");
+    novoLink.rel="stylesheet";
+    novoLink.id="themeStyle";
+    novoLink.href="themes/"+theme+".css?v="+Date.now(); // cache-buster força reload real
+
+    novoLink.onload=()=>{
+        const antigo=document.getElementById("themeStyle");
+        if(antigo && antigo!==novoLink) antigo.remove();
     };
 
-    const onError = () => {
+    document.head.appendChild(novoLink);
 
-        showCopyFeedback(
-            btn,
-            false
-        );
+    themeText.textContent=theme==="dark"?"Tema claro":"Tema escuro";
+    themeIcon.textContent=theme==="dark"?"☀":"☾";
+    try{localStorage.setItem("orbit-theme",theme);}catch(e){}
+}
+function initTheme(){
+    let saved="dark";
+    try{saved=localStorage.getItem("orbit-theme")||"dark";}catch(e){}
+    applyTheme(saved);
+}
+themeToggle.addEventListener("click",()=>{
+    let atual="dark";
+    try{atual=localStorage.getItem("orbit-theme")||"dark";}catch(e){}
+    applyTheme(atual==="dark"?"light":"dark");
+});
 
-    };
+/* ===== PARTE 1: TRATAMENTO DE ERROS ===== */
+function friendlyError(msg){
+    if(!navigator.onLine) return "Sem conexão com a internet. Verifique sua rede e tente novamente.";
+    if(!msg) return "Ocorreu um erro inesperado. Tente novamente.";
+    const m=msg.toLowerCase();
+    if(m.includes("inválida")||m.includes("expirou")) return "Chave de API inválida ou expirada. Verifique a configuração.";
+    if(m.includes("limite")) return "Limite de uso da API atingido. Aguarde um instante e tente novamente.";
+    if(m.includes("indisponível")||m.includes("servidor")) return "O servidor da IA está indisponível no momento. Tente novamente em instantes.";
+    return msg;
+}
+window.orbitError=function(errorMsg){
+    removeTyping();
+    addMessage("assistant",friendlyError(errorMsg),true);
+    busy=false;chatSendBtn.disabled=false;setState("idle");
+};
 
-
-    if (
-        navigator.clipboard &&
-        navigator.clipboard.writeText
-    ) {
-
-        navigator.clipboard
-            .writeText(text)
-            .then(onSuccess)
-            .catch(() => {
-
-                if (fallbackCopy(text)) {
-
-                    onSuccess();
-
-                } else {
-
-                    onError();
-
-                }
-
-            });
-
-    } else {
-
-        if (fallbackCopy(text)) {
-
-            onSuccess();
-
-        } else {
-
-            onError();
-
-        }
-
+/* ===== PARTE 4: BALÕES DE MENSAGEM ===== */
+function addMessage(role,text,isError){
+    if(emptyChat&&emptyChat.parentNode===messagesEl) emptyChat.remove();
+    const row=document.createElement("div");
+    row.className="msg "+(role==="user"?"user":"orbit");
+    const bubble=document.createElement("div");
+    bubble.className="bubble"+(isError?" error-bubble":"");
+    bubble.textContent=text;
+    if(role!=="user"&&!isError){
+        const btn=document.createElement("button");
+        btn.className="copy-btn";btn.textContent="📋 Copiar";
+        btn.onclick=()=>{navigator.clipboard.writeText(text);btn.textContent="Copiado!";setTimeout(()=>btn.textContent="📋 Copiar",1800);};
+        bubble.appendChild(btn);
     }
+    row.appendChild(bubble);messagesEl.appendChild(row);messagesEl.scrollTop=messagesEl.scrollHeight;
+}
+function showTyping(){
+    removeTyping();
+    const row=document.createElement("div");row.className="msg orbit";row.id="typingIndicator";
+    const bubble=document.createElement("div");bubble.className="bubble typing-dots";
+    bubble.innerHTML="<span></span><span></span><span></span>";
+    row.appendChild(bubble);messagesEl.appendChild(row);messagesEl.scrollTop=messagesEl.scrollHeight;
+}
+function removeTyping(){const i=document.getElementById("typingIndicator");if(i)i.remove();}
+
+window.orbitReceive=function(response){
+    removeTyping();addMessage("assistant",response);
+    totalMessages++;convCount.textContent=totalMessages;
+    busy=false;chatSendBtn.disabled=false;setState("idle");chatAskInput.focus();
+};
+
+/* ===== PARTE 6: TÍTULO AUTOMÁTICO ===== */
+function generateTitle(text){
+    const t=text.trim();
+    return t.length<=32?t:t.substring(0,32)+"…";
+}
+function createConversationTitle(firstMsg){
+    if(conversationTitle) return;
+    conversationTitle=generateTitle(firstMsg);
+    chatTitle.textContent=conversationTitle.toUpperCase();
+    conversationCounter++;
+    conversations.unshift({id:conversationCounter,title:conversationTitle});
+    renderHistory();
 }
 
-
-/* =========================================================
-   FALLBACK DE CÓPIA (sem clipboard API)
-   ========================================================= */
-
-function fallbackCopy(text) {
-
-    try {
-
-        const textarea =
-            document.createElement('textarea');
-
-        textarea.value =
-            text;
-
-        textarea.style.position =
-            'fixed';
-
-        textarea.style.opacity =
-            '0';
-
-        document.body.appendChild(
-            textarea
-        );
-
-        textarea.focus();
-        textarea.select();
-
-        const ok =
-            document.execCommand('copy');
-
-        document.body.removeChild(
-            textarea
-        );
-
-        return ok;
-
-    } catch (error) {
-
-        console.error(
-            'Falha no fallback de cópia:',
-            error
-        );
-
-        return false;
-
-    }
-}
-
-
-/* =========================================================
-   FEEDBACK VISUAL DE CÓPIA
-   ========================================================= */
-
-function showCopyFeedback(btn, success) {
-
-    if (!btn) {
-        return;
-    }
-
-    const label =
-        btn.querySelector('.copy-label');
-
-    if (!label) {
-        return;
-    }
-
-    const originalText =
-        'Copiar';
-
-    if (btn._copyTimeout) {
-
-        clearTimeout(
-            btn._copyTimeout
-        );
-
-    }
-
-    if (success) {
-
-        label.textContent =
-            'Copiado!';
-
-        btn.classList.add(
-            'copied'
-        );
-
-    } else {
-
-        label.textContent =
-            'Erro ao copiar';
-
-    }
-
-    const actions =
-        btn.closest('.msg-actions');
-
-    if (actions) {
-
-        actions.classList.add(
-            'is-visible'
-        );
-
-    }
-
-    btn._copyTimeout =
-        setTimeout(
-            () => {
-
-                label.textContent =
-                    originalText;
-
-                btn.classList.remove(
-                    'copied'
-                );
-
-                if (actions) {
-
-                    actions.classList.remove(
-                        'is-visible'
-                    );
-
-                }
-
-            },
-            1600
-        );
-}
-
-
-/* =========================================================
-   TYPING INDICATOR
-   ========================================================= */
-
-function addTypingIndicator() {
-
-    if (!messagesEl) {
-        return;
-    }
-
-
-    removeTypingIndicator();
-
-
-    /*
-     * Remove empty state caso ainda exista.
-     */
-
-    const currentEmpty =
-        document.getElementById('emptyChat');
-
-    if (currentEmpty) {
-        currentEmpty.remove();
-    }
-
-
-    const wrap =
-        document.createElement('div');
-
-
-    wrap.className =
-        'msg orbit';
-
-
-    wrap.id =
-        'typingIndicator';
-
-
-    const bubble =
-        document.createElement('div');
-
-
-    bubble.className =
-        'bubble typing-dots';
-
-
-    bubble.innerHTML = `
-        <span></span>
-        <span></span>
-        <span></span>
-    `;
-
-
-    wrap.appendChild(
-        bubble
-    );
-
-
-    messagesEl.appendChild(
-        wrap
-    );
-
-
-    scrollToBottom();
-}
-
-
-/* =========================================================
-   REMOVER TYPING
-   ========================================================= */
-
-function removeTypingIndicator() {
-
-    const indicator =
-        document.getElementById(
-            'typingIndicator'
-        );
-
-
-    if (indicator) {
-
-        indicator.remove();
-
-    }
-}
-
-
-/* =========================================================
-   ENVIAR MENSAGEM
-   ========================================================= */
-
-function sendMessage(text) {
-
-    text =
-        (text || '').trim();
-
-
-    if (!text) {
-        return;
-    }
-
-
-    if (busy) {
-        return;
-    }
-
-
-    if (
-        !messagesEl ||
-        !chatAskInput ||
-        !chatSendBtn
-    ) {
-        return;
-    }
-
-
-    busy = true;
-
-
-    chatSendBtn.disabled =
-        true;
-
-
-    addMessage(
-        'user',
-        text
-    );
-
-
-    setChatState(
-        'thinking'
-    );
-
-
-    addTypingIndicator();
-
-
-    /*
-     * =====================================================
-     * JAVA BRIDGE
-     * =====================================================
-     *
-     * O JavaFX deve disponibilizar:
-     *
-     * window.javaBridge
-     *
-     * com:
-     *
-     * sendMessage()
-     *
-     */
-
-
-    if (
-        window.javaBridgeReady &&
-        window.javaBridge &&
-        typeof window.javaBridge.sendMessage ===
-        'function'
-    ) {
-
-        try {
-
-            window.javaBridge.sendMessage(
-                text
-            );
-
-        } catch (error) {
-
-            console.error(
-                'Erro ao chamar javaBridge.sendMessage:',
-                error
-            );
-
-
-            orbitError(
-                'Não consegui enviar sua mensagem ao Orbit. Tente novamente.'
-            );
-        }
-
-
-    } else {
-
-        /*
-         * A ponte Java ainda não está disponível.
-         */
-
-        removeTypingIndicator();
-
-
-        addMessage(
-            'assistant',
-            'O Orbit ainda está inicializando. Aguarde alguns segundos e tente novamente.'
-        );
-
-
-        setChatState(
-            'idle'
-        );
-
-
-        busy = false;
-
-
-        chatSendBtn.disabled =
-            false;
-    }
-}
-
-
-/* =========================================================
-   RESPOSTA RECEBIDA DO JAVA
-   ========================================================= */
-
-window.orbitReceive =
-    function(reply) {
-
-        removeTypingIndicator();
-
-
-        setChatState(
-            'responding'
-        );
-
-
-        addMessage(
-            'assistant',
-            reply
-        );
-
-
-        turns++;
-
-
-        if (convCountEl) {
-
-            convCountEl.textContent =
-                turns.toString();
-
-        }
-
-
-        setTimeout(
-            () => {
-
-                if (!busy) {
-
-                    setChatState(
-                        'idle'
-                    );
-
-                }
-
-            },
-            900
-        );
-
-
-        busy = false;
-
-
-        if (chatSendBtn) {
-
-            chatSendBtn.disabled =
-                false;
-
-        }
-
-
-        if (chatAskInput) {
-
-            setTimeout(
-                () => {
-
-                    chatAskInput.focus();
-
-                },
-                100
-            );
-
-        }
-    };
-
-
-/* =========================================================
-   ERRO RECEBIDO DO JAVA
-   ========================================================= */
-
-window.orbitError =
-    function(message) {
-
-        removeTypingIndicator();
-
-
-        addMessage(
-            'assistant',
-            message ||
-            'Tive um problema para me conectar agora. Pode tentar novamente em instantes?'
-        );
-
-
-        setChatState(
-            'idle'
-        );
-
-
-        busy = false;
-
-
-        if (chatSendBtn) {
-
-            chatSendBtn.disabled =
-                false;
-
-        }
-    };
-
-
-/* =========================================================
-   CHAT INPUT
-   ========================================================= */
-
-if (chatAskBar) {
-
-    chatAskBar.addEventListener(
-        'submit',
-        event => {
-
-            event.preventDefault();
-
-
-            if (!chatAskInput) {
-                return;
-            }
-
-
-            const question =
-                chatAskInput.value.trim();
-
-
-            if (!question) {
-                return;
-            }
-
-
-            if (busy) {
-                return;
-            }
-
-
-            chatAskInput.value =
-                '';
-
-
-            sendMessage(
-                question
-            );
-
-        }
-    );
-}
-
-
-/* =========================================================
-   CHAT INPUT STATE
-   ========================================================= */
-
-if (chatAskInput) {
-
-    chatAskInput.addEventListener(
-        'focus',
-        () => {
-
-            if (!busy) {
-
-                setChatState(
-                    'listening'
-                );
-
-            }
-
-        }
-    );
-
-
-    chatAskInput.addEventListener(
-        'input',
-        () => {
-
-            if (!busy) {
-
-                setChatState(
-                    'listening'
-                );
-
-            }
-
-        }
-    );
-
-
-    chatAskInput.addEventListener(
-        'blur',
-        () => {
-
-            if (
-                !busy &&
-                !chatAskInput.value.trim()
-            ) {
-
-                setChatState(
-                    'idle'
-                );
-
-            }
-
-        }
-    );
-}
-
-
-/* =========================================================
-   NOVA CONVERSA
-   ========================================================= */
-
-function startNewChat() {
-
-    /*
-     * Não permitir reset enquanto o Orbit
-     * ainda estiver respondendo.
-     */
-
-    if (busy) {
-        return;
-    }
-
-
-    /*
-     * Limpa as mensagens sem destruir
-     * o container principal do chat.
-     */
-
-    restoreEmptyChat();
-
-
-    turns = 0;
-
-
-    if (convCountEl) {
-
-        convCountEl.textContent =
-            '0';
-
-    }
-
-
-    if (chatAskInput) {
-
-        chatAskInput.value =
-            '';
-
-    }
-
-
-    removeTypingIndicator();
-
-
-    setChatState(
-        'idle'
-    );
-
-
-    /*
-     * Informa ao backend Java que
-     * uma nova conversa começou.
-     */
-
-    if (
-        window.javaBridgeReady &&
-        window.javaBridge &&
-        typeof window.javaBridge.newChat ===
-        'function'
-    ) {
-
-        try {
-
-            window.javaBridge.newChat();
-
-        } catch (error) {
-
-            console.error(
-                'Erro ao iniciar nova conversa:',
-                error
-            );
-
-        }
-    }
-
-
-    /*
-     * Continua na tela de chat.
-     */
-
-    showView(
-        'chat'
-    );
-
-
-    requestAnimationFrame(() => {
-
-        refreshChatLayout();
-
-
-        setTimeout(() => {
-
-            if (chatAskInput) {
-
-                chatAskInput.focus();
-
-            }
-
-        }, 150);
-
+/* ===== PARTE 5: BARRA LATERAL / HISTÓRICO ===== */
+function renderHistory(){
+    historyList.innerHTML="";
+    if(conversations.length===0){historyList.appendChild(historyEmpty);return;}
+    conversations.forEach(conv=>{
+        const btn=document.createElement("button");
+        btn.className="history-item"+(conv.title===conversationTitle?" active":"");
+        btn.textContent=conv.title;
+        btn.onclick=()=>showView("chat");
+        historyList.appendChild(btn);
     });
 }
-
-
-/* =========================================================
-   BOTÃO NOVA CONVERSA
-   ========================================================= */
-
-if (newChatBtn) {
-
-    newChatBtn.addEventListener(
-        'click',
-        event => {
-
-            event.preventDefault();
-
-            startNewChat();
-
-        }
-    );
+function startNewChat(){
+    if(busy) return;
+    conversationTitle="";
+    chatTitle.textContent="NOVA CONVERSA";
+    messagesEl.innerHTML=`<div id="emptyChat" class="empty-chat">
+      <div class="mini-orbit"><div class="blob-wrap"><div class="blob"></div><div class="blob b2"></div><div class="blob core"></div></div></div>
+      <p>Envie uma mensagem para começar a conversar com o Orbit.</p></div>`;
+    chatAskInput.value="";
+    renderHistory();
+    showView("chat");
 }
+sidebarNewChat.addEventListener("click",startNewChat);
 
+/* ===== envio de mensagens (ponte com o Java) ===== */
+function sendMessage(text){
+    text=text.trim();
+    if(!text||busy) return;
+    if(!navigator.onLine){addMessage("assistant",friendlyError(null),true);return;}
 
-/* =========================================================
-   INICIALIZAÇÃO
-   ========================================================= */
+    busy=true;chatSendBtn.disabled=true;
+    createConversationTitle(text);
+    addMessage("user",text);
+    showView("chat");
+    setState("thinking");
+    showTyping();
 
-function initializeOrbit() {
-
-    /*
-     * Estado inicial
-     */
-
-    setHomeState(
-        'idle'
-    );
-
-
-    setChatState(
-        'idle'
-    );
-
-
-    /*
-     * Garante que somente a Home
-     * esteja ativa inicialmente.
-     */
-
-    showView(
-        'home'
-    );
-
-
-    /*
-     * Estado inicial do contador.
-     */
-
-    if (convCountEl) {
-
-        convCountEl.textContent =
-            turns.toString();
-
+    if(window.orbitBridge&&typeof window.orbitBridge.ask==="function"){
+        try{window.orbitBridge.ask(text);}catch(e){window.orbitError("Erro ao comunicar com a ponte do Java.");}
+    }else{
+        setTimeout(()=>window.orbitReceive("Resposta simulada (fora do JavaFX)."),900);
     }
 }
+homeAskBar.addEventListener("submit",e=>{e.preventDefault();const v=homeAskInput.value;homeAskInput.value="";if(v)sendMessage(v);});
+chatAskBar.addEventListener("submit",e=>{e.preventDefault();const v=chatAskInput.value;chatAskInput.value="";if(v)sendMessage(v);});
+document.querySelectorAll(".pill").forEach(p=>p.addEventListener("click",()=>{showView("chat");sendMessage(p.dataset.q);}));
 
+/* ===== PARTE 3: ATALHOS DE TECLADO ===== */
+window.addEventListener("keydown",e=>{
+    const alvo=document.activeElement;
+    if(e.key==="Enter"&&!e.shiftKey&&(alvo===chatAskInput||alvo===homeAskInput)){
+        e.preventDefault();
+        (alvo===chatAskInput?chatAskBar:homeAskBar).requestSubmit();
+    }
+    if(e.ctrlKey&&e.key.toLowerCase()==="n"){e.preventDefault();startNewChat();}
+    if(e.ctrlKey&&e.key.toLowerCase()==="l"){
+        e.preventDefault();
+        if(currentView==="chat"){chatAskInput.value="";chatAskInput.focus();}
+        else{homeAskInput.value="";homeAskInput.focus();}
+    }
+});
 
-/* =========================================================
-   INICIAR
-   ========================================================= */
-
-if (
-    document.readyState ===
-    'loading'
-) {
-
-    document.addEventListener(
-        'DOMContentLoaded',
-        initializeOrbit
-    );
-
-} else {
-
-    initializeOrbit();
-
-}
+/* ===== inicialização ===== */
+document.addEventListener("DOMContentLoaded",()=>{initTheme();setState("idle");renderHistory();});
