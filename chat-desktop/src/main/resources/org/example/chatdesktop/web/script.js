@@ -10,6 +10,10 @@ const chatAskBar=document.getElementById("chatAskBar"),chatAskInput=document.get
 const homeAskBar=document.getElementById("homeAskBar"),homeAskInput=document.getElementById("homeAskInput");
 const stateLabel=document.getElementById("stateLabel"),orbitAI=document.getElementById("orbitAI");
 
+/* elementos do modal de atalhos (podem não existir se o HTML não foi atualizado — por isso os checks abaixo) */
+const shortcutsBtn=document.getElementById("shortcutsBtn"),shortcutsModal=document.getElementById("shortcutsModal"),
+    closeShortcuts=document.getElementById("closeShortcuts");
+
 let currentView="home",busy=false,conversationTitle="",conversations=[],conversationCounter=0,totalMessages=0;
 
 function showView(name){
@@ -17,8 +21,8 @@ function showView(name){
     const t=document.getElementById("view-"+name);
     if(t){t.classList.add("active");currentView=name;if(name==="chat")setTimeout(()=>chatAskInput.focus(),150);}
 }
-logoBtn.addEventListener("click",()=>showView("home"));
-sidebarProfileBtn.addEventListener("click",()=>showView("profile"));
+if(logoBtn)logoBtn.addEventListener("click",()=>showView("home"));
+if(sidebarProfileBtn)sidebarProfileBtn.addEventListener("click",()=>showView("profile"));
 if(backHomeBtn)backHomeBtn.addEventListener("click",()=>showView("home"));
 
 function setState(state){
@@ -34,7 +38,7 @@ function applyTheme(theme){
     const novoLink=document.createElement("link");
     novoLink.rel="stylesheet";
     novoLink.id="themeStyle";
-    novoLink.href="themes/"+theme+".css?v="+Date.now(); // cache-buster força reload real
+    novoLink.href="themes/"+theme+".css?v="+Date.now();
 
     novoLink.onload=()=>{
         const antigo=document.getElementById("themeStyle");
@@ -43,8 +47,8 @@ function applyTheme(theme){
 
     document.head.appendChild(novoLink);
 
-    themeText.textContent=theme==="dark"?"Tema claro":"Tema escuro";
-    themeIcon.textContent=theme==="dark"?"☀":"☾";
+    if(themeText)themeText.textContent=theme==="dark"?"Tema claro":"Tema escuro";
+    if(themeIcon)themeIcon.textContent=theme==="dark"?"☀":"☾";
     try{localStorage.setItem("orbit-theme",theme);}catch(e){}
 }
 function initTheme(){
@@ -52,7 +56,7 @@ function initTheme(){
     try{saved=localStorage.getItem("orbit-theme")||"dark";}catch(e){}
     applyTheme(saved);
 }
-themeToggle.addEventListener("click",()=>{
+if(themeToggle)themeToggle.addEventListener("click",()=>{
     let atual="dark";
     try{atual=localStorage.getItem("orbit-theme")||"dark";}catch(e){}
     applyTheme(atual==="dark"?"light":"dark");
@@ -142,7 +146,18 @@ function startNewChat(){
     renderHistory();
     showView("chat");
 }
-sidebarNewChat.addEventListener("click",startNewChat);
+if(sidebarNewChat)sidebarNewChat.addEventListener("click",startNewChat);
+
+/* ===== funções expostas para o Java chamar via executeScript ===== */
+window.orbitNewChat=function(){ startNewChat(); };
+window.orbitClearInput=function(){
+    if(currentView==="chat"){chatAskInput.value="";chatAskInput.focus();}
+    else{homeAskInput.value="";homeAskInput.focus();}
+};
+window.orbitSubmit=function(){
+    if(currentView==="chat"&&chatAskBar) chatAskBar.requestSubmit();
+    else if(homeAskBar) homeAskBar.requestSubmit();
+};
 
 /* ===== envio de mensagens (ponte com o Java) ===== */
 function sendMessage(text){
@@ -163,23 +178,30 @@ function sendMessage(text){
         setTimeout(()=>window.orbitReceive("Resposta simulada (fora do JavaFX)."),900);
     }
 }
-homeAskBar.addEventListener("submit",e=>{e.preventDefault();const v=homeAskInput.value;homeAskInput.value="";if(v)sendMessage(v);});
-chatAskBar.addEventListener("submit",e=>{e.preventDefault();const v=chatAskInput.value;chatAskInput.value="";if(v)sendMessage(v);});
+if(homeAskBar)homeAskBar.addEventListener("submit",e=>{e.preventDefault();const v=homeAskInput.value;homeAskInput.value="";if(v)sendMessage(v);});
+if(chatAskBar)chatAskBar.addEventListener("submit",e=>{e.preventDefault();const v=chatAskInput.value;chatAskInput.value="";if(v)sendMessage(v);});
 document.querySelectorAll(".pill").forEach(p=>p.addEventListener("click",()=>{showView("chat");sendMessage(p.dataset.q);}));
 
-/* ===== PARTE 3: ATALHOS DE TECLADO ===== */
+/* ===== ATALHOS: exibição do modal de ajuda ===== */
+function toggleShortcuts(force){
+    if(!shortcutsModal) return;
+    const open=force!==undefined?force:!shortcutsModal.classList.contains("open");
+    shortcutsModal.classList.toggle("open",open);
+}
+if(shortcutsBtn)shortcutsBtn.addEventListener("click",()=>toggleShortcuts(true));
+if(closeShortcuts)closeShortcuts.addEventListener("click",()=>toggleShortcuts(false));
+if(shortcutsModal)shortcutsModal.addEventListener("click",e=>{if(e.target===shortcutsModal)toggleShortcuts(false);});
+
+/* ===== PARTE 3: ATALHOS DE TECLADO (funcionam quando o WebView tem o foco) ===== */
 window.addEventListener("keydown",e=>{
     const alvo=document.activeElement;
     if(e.key==="Enter"&&!e.shiftKey&&(alvo===chatAskInput||alvo===homeAskInput)){
         e.preventDefault();
-        (alvo===chatAskInput?chatAskBar:homeAskBar).requestSubmit();
+        window.orbitSubmit();
     }
-    if(e.ctrlKey&&e.key.toLowerCase()==="n"){e.preventDefault();startNewChat();}
-    if(e.ctrlKey&&e.key.toLowerCase()==="l"){
-        e.preventDefault();
-        if(currentView==="chat"){chatAskInput.value="";chatAskInput.focus();}
-        else{homeAskInput.value="";homeAskInput.focus();}
-    }
+    if(e.ctrlKey&&e.key.toLowerCase()==="n"){e.preventDefault();window.orbitNewChat();}
+    if(e.ctrlKey&&e.key.toLowerCase()==="l"){e.preventDefault();window.orbitClearInput();}
+    if(e.ctrlKey&&e.key==="/"){e.preventDefault();toggleShortcuts();}
 });
 
 /* ===== inicialização ===== */

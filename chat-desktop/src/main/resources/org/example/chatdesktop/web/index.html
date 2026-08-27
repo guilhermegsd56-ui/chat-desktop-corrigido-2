@@ -26,6 +26,7 @@
             <button id="themeToggle" class="side-btn" type="button">
                 <span id="themeIcon">☀</span> <span id="themeText">Tema claro</span>
             </button>
+            <button id="shortcutsBtn" class="side-btn" type="button">⌨ Atalhos</button>
             <button id="sidebarProfileBtn" class="side-btn" type="button">👤 Perfil</button>
         </div>
     </aside>
@@ -84,6 +85,23 @@
         </div>
     </main>
 </div>
+
+<!-- ===== MODAL DE ATALHOS ===== -->
+<div id="shortcutsModal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Atalhos de teclado</h3>
+            <button id="closeShortcuts" class="modal-close" type="button">✕</button>
+        </div>
+        <ul class="shortcut-list">
+            <li><span>Enviar mensagem</span><kbd>Enter</kbd></li>
+            <li><span>Nova conversa</span><kbd>Ctrl</kbd> + <kbd>N</kbd></li>
+            <li><span>Limpar campo</span><kbd>Ctrl</kbd> + <kbd>L</kbd></li>
+            <li><span>Mostrar/ocultar atalhos</span><kbd>Ctrl</kbd> + <kbd>/</kbd></li>
+        </ul>
+    </div>
+</div>
+
 <script src="script.js"></script>
 </body>
 </html>

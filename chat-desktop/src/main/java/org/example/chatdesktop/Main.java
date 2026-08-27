@@ -4,6 +4,8 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
@@ -45,6 +47,18 @@ public class Main extends Application {
 
         StackPane root = new StackPane(webView);
         Scene scene = new Scene(root, 1100, 700);
+
+        // ===== ATALHOS GLOBAIS: capturados ANTES do WebView, pois Ctrl+N e Ctrl+L
+        // são reservados internamente pelo motor do WebView e nunca chegariam ao JS. =====
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (event.isControlDown() && event.getCode() == KeyCode.N) {
+                webEngine.executeScript("if(window.orbitNewChat) window.orbitNewChat();");
+                event.consume();
+            } else if (event.isControlDown() && event.getCode() == KeyCode.L) {
+                webEngine.executeScript("if(window.orbitClearInput) window.orbitClearInput();");
+                event.consume();
+            }
+        });
 
         primaryStage.setTitle("Orbit AI");
         primaryStage.setScene(scene);
