@@ -20,13 +20,28 @@ public class JSBridge {
         new Thread(() -> {
             try {
                 String resposta = groqService.chat(prompt);
+
                 Platform.runLater(() ->
-                        engine.executeScript("window.orbitReceive(" + escapeJavaStyleString(resposta) + ")")
+                        engine.executeScript(
+                                "window.orbitReceive(" +
+                                        escapeJavaStyleString(resposta) +
+                                        ")"
+                        )
                 );
+
             } catch (Exception e) {
-                String erroMsg = e.getMessage() != null ? e.getMessage() : "Erro desconhecido";
+
+                String erroMsg =
+                        e.getMessage() != null
+                                ? e.getMessage()
+                                : "Erro desconhecido";
+
                 Platform.runLater(() ->
-                        engine.executeScript("window.orbitError(" + escapeJavaStyleString(erroMsg) + ")")
+                        engine.executeScript(
+                                "window.orbitError(" +
+                                        escapeJavaStyleString(erroMsg) +
+                                        ")"
+                        )
                 );
             }
         }).start();
@@ -50,41 +65,74 @@ public class JSBridge {
 
     public void changeTheme(String theme) {
         Platform.runLater(() ->
-                engine.executeScript("applyTheme('" + theme + "')")
+                engine.executeScript(
+                        "applyTheme('" + theme + "')"
+                )
         );
     }
 
     /**
-     * Copia o texto para a área de transferência do sistema operacional
-     * usando a Clipboard nativa do JavaFX (navigator.clipboard não é
-     * suportado de forma confiável dentro do WebView).
+     * Copia o texto para a área de transferência
+     * do sistema operacional usando a Clipboard
+     * nativa do JavaFX.
+     *
+     * Isso evita depender do navigator.clipboard
+     * dentro do WebView.
      */
     public void copyToClipboard(String text) {
-        final Clipboard clipboard = Clipboard.getSystemClipboard();
-        final ClipboardContent content = new ClipboardContent();
-        content.putString(text != null ? text : "");
+
+        final Clipboard clipboard =
+                Clipboard.getSystemClipboard();
+
+        final ClipboardContent content =
+                new ClipboardContent();
+
+        content.putString(
+                text != null
+                        ? text
+                        : ""
+        );
+
         clipboard.setContent(content);
     }
 
     /**
-     * Lê o texto atual da área de transferência do sistema operacional.
-     * Chamado de forma síncrona pelo JavaScript (window.orbitBridge.pasteFromClipboard()),
-     * retornando diretamente a String (sem Promise).
+     * Obtém o texto da área de transferência
+     * do sistema operacional.
+     *
+     * O método é chamado diretamente pelo JavaScript:
+     *
+     * window.orbitBridge.pasteFromClipboard()
      */
     public String pasteFromClipboard() {
-        final Clipboard clipboard = Clipboard.getSystemClipboard();
+
+        final Clipboard clipboard =
+                Clipboard.getSystemClipboard();
+
         if (clipboard.hasString()) {
-            String texto = clipboard.getString();
-            return texto != null ? texto : "";
+
+            String texto =
+                    clipboard.getString();
+
+            return texto != null
+                    ? texto
+                    : "";
         }
+
         return "";
     }
 
     private String escapeJavaStyleString(String str) {
-        if (str == null) return "\"\"";
-        return "\"" + str.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "") + "\"";
+
+        if (str == null) {
+            return "\"\"";
+        }
+
+        return "\"" +
+                str.replace("\\", "\\\\")
+                        .replace("\"", "\\\"")
+                        .replace("\n", "\\n")
+                        .replace("\r", "") +
+                "\"";
     }
 }

@@ -1,121 +1,813 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0">
+
     <title>Orbit AI</title>
-    <link rel="stylesheet" href="style.css">
-    <link id="themeStyle" rel="stylesheet" href="themes/dark.css">
+
+    <link
+            rel="stylesheet"
+            href="style.css">
+
+    <link
+            id="themeStyle"
+            rel="stylesheet"
+            href="themes/dark.css">
 </head>
+
 <body>
+
 <div id="app">
 
-    <!-- ===== PARTE 5: BARRA LATERAL ===== -->
+    <!-- =====================================================
+         BARRA LATERAL
+         ===================================================== -->
+
     <aside class="sidebar">
+
         <div class="sidebar-top">
-            <button id="logoBtn" class="logo" type="button"><span class="dot"></span>ORBIT</button>
-            <button id="sidebarNewChat" class="new-chat-btn" type="button">+ Nova conversa</button>
-        </div>
-        <div class="sidebar-history">
-            <div class="hist-label">HISTÓRICO</div>
-            <div id="historyList">
-                <div id="historyEmpty" class="hist-empty">Nenhuma conversa ainda.</div>
-            </div>
-        </div>
-        <div class="sidebar-bottom">
-            <button id="themeToggle" class="side-btn" type="button">
-                <span id="themeIcon">☀</span> <span id="themeText">Tema claro</span>
+
+            <button
+                    id="logoBtn"
+                    class="logo"
+                    type="button">
+
+                <span class="dot"></span>
+
+                ORBIT
+
             </button>
-            <button id="shortcutsBtn" class="side-btn" type="button">⌨ Atalhos</button>
-            <button id="sidebarProfileBtn" class="side-btn" type="button">👤 Perfil</button>
+
+
+            <button
+                    id="sidebarNewChat"
+                    class="new-chat-btn"
+                    type="button">
+
+                + Nova conversa
+
+            </button>
+
         </div>
+
+
+        <!-- HISTÓRICO -->
+
+        <div class="sidebar-history">
+
+            <div class="hist-label">
+                HISTÓRICO
+            </div>
+
+            <div id="historyList">
+
+                <div
+                        id="historyEmpty"
+                        class="hist-empty">
+
+                    Nenhuma conversa ainda.
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- PARTE INFERIOR -->
+
+        <div class="sidebar-bottom">
+
+            <button
+                    id="themeToggle"
+                    class="side-btn"
+                    type="button">
+
+                <span id="themeIcon">
+                    ☀
+                </span>
+
+                <span id="themeText">
+                    Tema claro
+                </span>
+
+            </button>
+
+
+            <button
+                    id="shortcutsBtn"
+                    class="side-btn"
+                    type="button">
+
+                ⌨ Atalhos
+
+            </button>
+
+
+            <button
+                    id="sidebarProfileBtn"
+                    class="side-btn"
+                    type="button">
+
+                👤 Perfil
+
+            </button>
+
+        </div>
+
     </aside>
 
+
+    <!-- =====================================================
+         ÁREA PRINCIPAL
+         ===================================================== -->
+
     <main class="main">
+
+        <!-- TOPBAR -->
+
         <header class="topbar">
-            <div class="status-pill"><span class="dot online"></span><span id="stateLabel">online</span></div>
-            <div id="chatTitle" class="chat-title">NOVA CONVERSA</div>
-            <div class="msg-count">Msgs: <span id="convCount">0</span></div>
+
+            <div class="status-pill">
+
+                <span class="dot online"></span>
+
+                <span id="stateLabel">
+                    online
+                </span>
+
+            </div>
+
+
+            <div
+                    id="chatTitle"
+                    class="chat-title">
+
+                NOVA CONVERSA
+
+            </div>
+
+
+            <div class="msg-count">
+
+                Msgs:
+
+                <span id="convCount">
+                    0
+                </span>
+
+            </div>
+
         </header>
 
-        <!-- ===== BASE: TELA HOME + ORBE ===== -->
-        <div id="view-home" class="view active">
+
+        <!-- =================================================
+             HOME
+             ================================================= -->
+
+        <div
+                id="view-home"
+                class="view active">
+
             <div class="orbit-stage">
-                <div class="orbit-ai idle" id="orbitAI">
-                    <div class="blob-wrap"><div class="blob"></div><div class="blob b2"></div><div class="blob core"></div></div>
+
+                <div
+                        class="orbit-ai idle"
+                        id="orbitAI">
+
+                    <div class="blob-wrap">
+
+                        <div class="blob"></div>
+
+                        <div class="blob b2"></div>
+
+                        <div class="blob core"></div>
+
+                    </div>
+
                 </div>
+
             </div>
+
+
             <section class="hero">
-                <div class="eyebrow">Orbit AI</div>
-                <h1 class="hero-title">Bem-vindo ao <span class="grad">Orbit!</span><br>Faça suas perguntas<br>que iremos resolver.</h1>
-                <p class="hero-desc">Uma inteligência viva, feita para orientar, esclarecer e resolver — em tempo real.</p>
-                <form id="homeAskBar" class="ask-bar" autocomplete="off">
-                    <input type="text" id="homeAskInput" placeholder="Faça uma pergunta ao Orbit..." />
-                    <button type="button" id="homePasteBtn" class="paste-btn" title="Colar da área de transferência">📋</button>
-                    <button type="submit" class="send-btn" aria-label="Enviar">
-                        <svg viewBox="0 0 24 24" fill="none"><path d="M4 12H20M20 12L14 6M20 12L14 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+
+                <div class="eyebrow">
+                    Orbit AI
+                </div>
+
+
+                <h1 class="hero-title">
+
+                    Bem-vindo ao
+                    <span class="grad">
+                        Orbit!
+                    </span>
+
+                    <br>
+
+                    Faça suas perguntas
+
+                    <br>
+
+                    que iremos resolver.
+
+                </h1>
+
+
+                <p class="hero-desc">
+
+                    Uma inteligência viva, feita para
+                    orientar, esclarecer e resolver —
+                    em tempo real.
+
+                </p>
+
+
+                <form
+                        id="homeAskBar"
+                        class="ask-bar"
+                        autocomplete="off">
+
+                    <input
+                            type="text"
+                            id="homeAskInput"
+                            placeholder="Faça uma pergunta ao Orbit...">
+
+
+                    <button
+                            type="button"
+                            id="homePasteBtn"
+                            class="paste-btn"
+                            title="Colar da área de transferência">
+
+                        📋
+
                     </button>
+
+
+                    <button
+                            type="submit"
+                            class="send-btn"
+                            aria-label="Enviar">
+
+                        <svg
+                                viewBox="0 0 24 24"
+                                fill="none">
+
+                            <path
+                                    d="M4 12H20M20 12L14 6M20 12L14 18"
+                                    stroke="white"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"/>
+
+                        </svg>
+
+                    </button>
+
                 </form>
+
+
                 <div class="quick-row">
-                    <div class="pill" data-q="Como funciona o Orbit?">Como funciona o Orbit?</div>
-                    <div class="pill" data-q="O que você pode fazer por mim?">O que você pode fazer?</div>
+
+                    <div
+                            class="pill"
+                            data-q="Como funciona o Orbit?">
+
+                        Como funciona o Orbit?
+
+                    </div>
+
+
+                    <div
+                            class="pill"
+                            data-q="O que você pode fazer por mim?">
+
+                        O que você pode fazer?
+
+                    </div>
+
                 </div>
+
             </section>
+
         </div>
 
-        <!-- ===== TELA DE CHAT ===== -->
-        <div id="view-chat" class="view">
-            <div id="messages" class="messages">
-                <div id="emptyChat" class="empty-chat">
-                    <div class="mini-orbit"><div class="blob-wrap"><div class="blob"></div><div class="blob b2"></div><div class="blob core"></div></div></div>
-                    <p>Envie uma mensagem para começar a conversar com o Orbit.</p>
+
+        <!-- =================================================
+             CHAT
+             ================================================= -->
+
+        <div
+                id="view-chat"
+                class="view">
+
+            <div
+                    id="messages"
+                    class="messages">
+
+                <div
+                        id="emptyChat"
+                        class="empty-chat">
+
+                    <div class="mini-orbit">
+
+                        <div class="blob-wrap">
+
+                            <div class="blob"></div>
+
+                            <div class="blob b2"></div>
+
+                            <div class="blob core"></div>
+
+                        </div>
+
+                    </div>
+
+
+                    <p>
+
+                        Envie uma mensagem para começar
+                        a conversar com o Orbit.
+
+                    </p>
+
                 </div>
+
             </div>
-            <form id="chatAskBar" class="ask-bar chat-ask-bar" autocomplete="off">
-                <input type="text" id="chatAskInput" placeholder="Mensagem para o Orbit..." />
-                <button type="button" id="chatPasteBtn" class="paste-btn" title="Colar da área de transferência">📋</button>
-                <button type="submit" class="send-btn" id="chatSendBtn" aria-label="Enviar">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="M4 12H20M20 12L14 6M20 12L14 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+
+
+            <form
+                    id="chatAskBar"
+                    class="ask-bar chat-ask-bar"
+                    autocomplete="off">
+
+                <input
+                        type="text"
+                        id="chatAskInput"
+                        placeholder="Mensagem para o Orbit...">
+
+
+                <button
+                        type="button"
+                        id="chatPasteBtn"
+                        class="paste-btn"
+                        title="Colar da área de transferência">
+
+                    📋
+
                 </button>
+
+
+                <button
+                        type="submit"
+                        class="send-btn"
+                        id="chatSendBtn"
+                        aria-label="Enviar">
+
+                    <svg
+                            viewBox="0 0 24 24"
+                            fill="none">
+
+                        <path
+                                d="M4 12H20M20 12L14 6M20 12L14 18"
+                                stroke="white"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"/>
+
+                    </svg>
+
+                </button>
+
             </form>
+
         </div>
 
-        <!-- ===== TELA DE PERFIL ===== -->
-        <div id="view-profile" class="view profile-view">
-            <div class="profile-card">
-                <div id="profileAvatar" class="profile-avatar">O</div>
-                <input id="profileNameInput" type="text" placeholder="Seu nome" maxlength="24" />
-                <button id="saveProfileBtn" class="new-chat-btn" type="button">Salvar</button>
+
+        <!-- =================================================
+             PERFIL
+             ================================================= -->
+
+        <div
+                id="view-profile"
+                class="view profile-view">
+
+            <div class="profile-shell">
+
+                <div class="profile-glow"></div>
+
+
+                <!-- CABEÇALHO -->
+
+                <div class="profile-header">
+
+                    <div class="profile-avatar-wrap">
+
+                        <div
+                                id="profileAvatar"
+                                class="profile-avatar">
+
+                            O
+
+                        </div>
+
+
+                        <span
+                                class="profile-online-dot"
+                                aria-label="Online">
+                        </span>
+
+                    </div>
+
+
+                    <div class="profile-heading">
+
+                        <span class="profile-eyebrow">
+                            CONTA ORBIT
+                        </span>
+
+
+                        <h1>
+                            Seu perfil
+                        </h1>
+
+
+                        <p id="profileGreeting">
+
+                            Personalize como o Orbit
+                            deve chamar você.
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- SEPARADOR -->
+
+                <div class="profile-divider"></div>
+
+
+                <!-- =================================================
+                     NOME
+                     ================================================= -->
+
+                <div class="profile-form">
+
+                    <div class="profile-field-label">
+
+                        <label for="profileNameInput">
+
+                            Nome de exibição
+
+                        </label>
+
+
+                        <span id="profileNameCounter">
+
+                            0/24
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="profile-input-wrap">
+
+                        <span class="profile-input-icon">
+
+                            ✦
+
+                        </span>
+
+
+                        <input
+                                id="profileNameInput"
+                                type="text"
+                                maxlength="24"
+                                placeholder="Digite seu nome"
+                                autocomplete="name">
+
+                    </div>
+
+
+                    <p class="profile-help">
+
+                        Esse nome ficará salvo neste
+                        dispositivo e aparecerá sempre
+                        que você abrir o seu perfil.
+
+                    </p>
+
+
+                    <button
+                            id="saveProfileBtn"
+                            class="profile-save-btn"
+                            type="button">
+
+                        <span>
+                            Salvar alterações
+                        </span>
+
+
+                        <span class="profile-save-arrow">
+                            →
+                        </span>
+
+                    </button>
+
+                </div>
+
+
+                <!-- =================================================
+                     RESUMO
+                     ================================================= -->
+
+                <div class="profile-section-title">
+
+                    Resumo da conta
+
+                </div>
+
+
                 <div class="profile-stats">
-                    <div><span id="profileMsgCount">0</span><small>Mensagens enviadas</small></div>
-                    <div><span id="profileConvCount">0</span><small>Conversas criadas</small></div>
+
+                    <!-- MENSAGENS -->
+
+                    <div class="profile-stat">
+
+                        <span class="profile-stat-icon">
+                            ◌
+                        </span>
+
+
+                        <div>
+
+                            <span id="profileMsgCount">
+                                0
+                            </span>
+
+                            <small>
+                                Mensagens enviadas
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- CONVERSAS -->
+
+                    <div class="profile-stat">
+
+                        <span class="profile-stat-icon">
+                            ◎
+                        </span>
+
+
+                        <div>
+
+                            <span id="profileConvCount">
+                                0
+                            </span>
+
+                            <small>
+                                Conversas criadas
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- STATUS -->
+
+                    <div class="profile-stat">
+
+                        <span class="profile-stat-icon">
+                            ●
+                        </span>
+
+
+                        <div>
+
+                            <span>
+                                Online
+                            </span>
+
+                            <small>
+                                Status atual
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PLANO -->
+
+                    <div class="profile-stat">
+
+                        <span class="profile-stat-icon">
+                            ✧
+                        </span>
+
+
+                        <div>
+
+                            <span>
+                                Gratuito
+                            </span>
+
+                            <small>
+                                Plano atual
+                            </small>
+
+                        </div>
+
+                    </div>
+
                 </div>
-                <div class="profile-info">
-                    <p><strong>Modelo:</strong> openai/gpt-oss-120b (Groq)</p>
-                    <p><strong>Versão:</strong> Orbit AI Desktop 1.0</p>
+
+
+                <!-- =================================================
+                     INFORMAÇÕES
+                     ================================================= -->
+
+                <div class="profile-details">
+
+                    <div class="profile-detail-row">
+
+                        <div>
+
+                            <small>
+                                Modelo de IA
+                            </small>
+
+                            <strong>
+                                openai/gpt-oss-120b
+                            </strong>
+
+                        </div>
+
+
+                        <span>
+                            Groq
+                        </span>
+
+                    </div>
+
+
+                    <div class="profile-detail-row">
+
+                        <div>
+
+                            <small>
+                                Aplicativo
+                            </small>
+
+                            <strong>
+                                Orbit AI Desktop
+                            </strong>
+
+                        </div>
+
+
+                        <span>
+                            v1.0
+                        </span>
+
+                    </div>
+
                 </div>
+
+
+                <!-- =================================================
+                     VOLTAR
+                     ================================================= -->
+
+                <button
+                        id="backHomeBtn"
+                        class="profile-back-btn"
+                        type="button">
+
+                    ← Voltar ao início
+
+                </button>
+
             </div>
-            <button id="backHomeBtn" class="side-btn" type="button">← Voltar ao início</button>
+
         </div>
+
     </main>
+
 </div>
 
-<!-- ===== MODAL DE ATALHOS ===== -->
-<div id="shortcutsModal" class="modal-overlay">
+
+<!-- =========================================================
+     MODAL DE ATALHOS
+     ========================================================= -->
+
+<div
+        id="shortcutsModal"
+        class="modal-overlay">
+
     <div class="modal-box">
+
         <div class="modal-header">
-            <h3>Atalhos de teclado</h3>
-            <button id="closeShortcuts" class="modal-close" type="button">✕</button>
+
+            <h3>
+                Atalhos de teclado
+            </h3>
+
+
+            <button
+                    id="closeShortcuts"
+                    class="modal-close"
+                    type="button">
+
+                ✕
+
+            </button>
+
         </div>
+
+
         <ul class="shortcut-list">
-            <li><span>Enviar mensagem</span><kbd>Enter</kbd></li>
-            <li><span>Nova conversa</span><kbd>Ctrl</kbd> + <kbd>N</kbd></li>
-            <li><span>Limpar campo</span><kbd>Ctrl</kbd> + <kbd>L</kbd></li>
-            <li><span>Mostrar/ocultar atalhos</span><kbd>Ctrl</kbd> + <kbd>/</kbd></li>
+
+            <li>
+
+                <span>
+                    Enviar mensagem
+                </span>
+
+                <kbd>
+                    Enter
+                </kbd>
+
+            </li>
+
+
+            <li>
+
+                <span>
+                    Nova conversa
+                </span>
+
+                <span>
+                    <kbd>Ctrl</kbd>
+                    +
+                    <kbd>N</kbd>
+                </span>
+
+            </li>
+
+
+            <li>
+
+                <span>
+                    Limpar campo
+                </span>
+
+                <span>
+                    <kbd>Ctrl</kbd>
+                    +
+                    <kbd>L</kbd>
+                </span>
+
+            </li>
+
+
+            <li>
+
+                <span>
+                    Mostrar/ocultar atalhos
+                </span>
+
+                <span>
+                    <kbd>Ctrl</kbd>
+                    +
+                    <kbd>/</kbd>
+                </span>
+
+            </li>
+
         </ul>
+
     </div>
+
 </div>
+
 
 <script src="script.js"></script>
+
 </body>
 </html>
