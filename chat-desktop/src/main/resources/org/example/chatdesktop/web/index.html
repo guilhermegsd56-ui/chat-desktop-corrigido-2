@@ -38,7 +38,7 @@
             <div class="msg-count">Msgs: <span id="convCount">0</span></div>
         </header>
 
-        <!-- ===== BASE: TELA HOME + ORBE (correção visual) ===== -->
+        <!-- ===== BASE: TELA HOME + ORBE ===== -->
         <div id="view-home" class="view active">
             <div class="orbit-stage">
                 <div class="orbit-ai idle" id="orbitAI">
@@ -51,6 +51,7 @@
                 <p class="hero-desc">Uma inteligência viva, feita para orientar, esclarecer e resolver — em tempo real.</p>
                 <form id="homeAskBar" class="ask-bar" autocomplete="off">
                     <input type="text" id="homeAskInput" placeholder="Faça uma pergunta ao Orbit..." />
+                    <button type="button" id="homePasteBtn" class="paste-btn" title="Colar da área de transferência">📋</button>
                     <button type="submit" class="send-btn" aria-label="Enviar">
                         <svg viewBox="0 0 24 24" fill="none"><path d="M4 12H20M20 12L14 6M20 12L14 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
@@ -62,7 +63,7 @@
             </section>
         </div>
 
-        <!-- ===== TELA DE CHAT (usa PARTE 4: balões) ===== -->
+        <!-- ===== TELA DE CHAT ===== -->
         <div id="view-chat" class="view">
             <div id="messages" class="messages">
                 <div id="emptyChat" class="empty-chat">
@@ -72,15 +73,28 @@
             </div>
             <form id="chatAskBar" class="ask-bar chat-ask-bar" autocomplete="off">
                 <input type="text" id="chatAskInput" placeholder="Mensagem para o Orbit..." />
+                <button type="button" id="chatPasteBtn" class="paste-btn" title="Colar da área de transferência">📋</button>
                 <button type="submit" class="send-btn" id="chatSendBtn" aria-label="Enviar">
                     <svg viewBox="0 0 24 24" fill="none"><path d="M4 12H20M20 12L14 6M20 12L14 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </button>
             </form>
         </div>
 
+        <!-- ===== TELA DE PERFIL ===== -->
         <div id="view-profile" class="view profile-view">
-            <h2>Configurações de Perfil</h2>
-            <p class="muted">Preferências da sua aplicação Orbit AI Desktop.</p>
+            <div class="profile-card">
+                <div id="profileAvatar" class="profile-avatar">O</div>
+                <input id="profileNameInput" type="text" placeholder="Seu nome" maxlength="24" />
+                <button id="saveProfileBtn" class="new-chat-btn" type="button">Salvar</button>
+                <div class="profile-stats">
+                    <div><span id="profileMsgCount">0</span><small>Mensagens enviadas</small></div>
+                    <div><span id="profileConvCount">0</span><small>Conversas criadas</small></div>
+                </div>
+                <div class="profile-info">
+                    <p><strong>Modelo:</strong> openai/gpt-oss-120b (Groq)</p>
+                    <p><strong>Versão:</strong> Orbit AI Desktop 1.0</p>
+                </div>
+            </div>
             <button id="backHomeBtn" class="side-btn" type="button">← Voltar ao início</button>
         </div>
     </main>

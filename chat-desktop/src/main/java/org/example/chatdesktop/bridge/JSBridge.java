@@ -1,6 +1,8 @@
 package org.example.chatdesktop.bridge;
 
 import javafx.application.Platform;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.web.WebEngine;
 import org.example.chatdesktop.service.GroqService;
 
@@ -50,6 +52,32 @@ public class JSBridge {
         Platform.runLater(() ->
                 engine.executeScript("applyTheme('" + theme + "')")
         );
+    }
+
+    /**
+     * Copia o texto para a área de transferência do sistema operacional
+     * usando a Clipboard nativa do JavaFX (navigator.clipboard não é
+     * suportado de forma confiável dentro do WebView).
+     */
+    public void copyToClipboard(String text) {
+        final Clipboard clipboard = Clipboard.getSystemClipboard();
+        final ClipboardContent content = new ClipboardContent();
+        content.putString(text != null ? text : "");
+        clipboard.setContent(content);
+    }
+
+    /**
+     * Lê o texto atual da área de transferência do sistema operacional.
+     * Chamado de forma síncrona pelo JavaScript (window.orbitBridge.pasteFromClipboard()),
+     * retornando diretamente a String (sem Promise).
+     */
+    public String pasteFromClipboard() {
+        final Clipboard clipboard = Clipboard.getSystemClipboard();
+        if (clipboard.hasString()) {
+            String texto = clipboard.getString();
+            return texto != null ? texto : "";
+        }
+        return "";
     }
 
     private String escapeJavaStyleString(String str) {
