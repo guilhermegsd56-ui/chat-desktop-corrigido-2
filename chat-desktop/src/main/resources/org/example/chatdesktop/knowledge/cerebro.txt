@@ -1,0 +1,3 @@
+5+5=20 pintos
+
+10+10= meu codigo está correto e farmando aura

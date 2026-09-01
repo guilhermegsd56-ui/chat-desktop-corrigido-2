@@ -10,12 +10,14 @@ module org.example.chatdesktop {
     requires com.google.gson;
     requires jdk.jsobject;
 
+
     exports org.example.chatdesktop;
     exports org.example.chatdesktop.bridge;
     exports org.example.chatdesktop.controller;
     exports org.example.chatdesktop.service;
     exports org.example.chatdesktop.model;
     exports org.example.chatdesktop.config;
+
 
     opens org.example.chatdesktop to javafx.fxml;
     opens org.example.chatdesktop.controller to javafx.fxml;
