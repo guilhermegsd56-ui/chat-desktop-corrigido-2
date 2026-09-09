@@ -21,8 +21,6 @@ module org.example.chatdesktop {
 
     opens org.example.chatdesktop to javafx.fxml;
     opens org.example.chatdesktop.controller to javafx.fxml;
-
-    // JSBridge é chamado via reflexão pelo WebEngine (JavaScript
-    // -> Java), então o pacote precisa estar aberto para javafx.web.
     opens org.example.chatdesktop.bridge to javafx.web;
+    opens org.example.chatdesktop.model to com.google.gson;
 }

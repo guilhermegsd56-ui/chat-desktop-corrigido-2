@@ -1,6 +1,6 @@
 /* =========================================================
-   ORBIT AI
-   SCRIPT PRINCIPAL
+   ORBIT AI v2.0
+   SCRIPT PRINCIPAL COM 6 FUNCIONALIDADES NOVAS
    ========================================================= */
 
 
@@ -124,6 +124,86 @@ const chatPasteBtn =
 
 
 /* =========================================================
+   MODAL DE CONFIRMAÇÃO (NOVO)
+   ========================================================= */
+
+let confirmModal = null;
+let confirmCallback = null;
+
+
+function createConfirmModal() {
+
+    const modal = document.createElement("div");
+    modal.id = "confirmationModal";
+    modal.className = "modal-overlay confirmation-modal";
+    modal.style.display = "none";
+
+    modal.innerHTML = `
+        <div class="modal-box confirmation-box">
+            <div class="modal-header">
+                <h3 id="confirmTitle">Confirmar ação</h3>
+                <button class="modal-close" id="confirmClose" type="button">✕</button>
+            </div>
+            <p id="confirmMessage">Tem certeza que deseja fazer isso?</p>
+            <div class="confirmation-buttons">
+                <button id="confirmYes" class="btn-confirm-yes" type="button">Sim, confirmar</button>
+                <button id="confirmNo" class="btn-confirm-no" type="button">Cancelar</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById("confirmClose").addEventListener("click", () => closeConfirm());
+
+    document.getElementById("confirmYes").addEventListener("click", () => {
+
+        if (confirmCallback) {
+            confirmCallback(true);
+        }
+
+        closeConfirm();
+    });
+
+    document.getElementById("confirmNo").addEventListener("click", () => {
+
+        if (confirmCallback) {
+            confirmCallback(false);
+        }
+
+        closeConfirm();
+    });
+
+    return modal;
+}
+
+
+function showConfirm(title, message, callback) {
+
+    if (!confirmModal) {
+        confirmModal = createConfirmModal();
+    }
+
+    document.getElementById("confirmTitle").textContent = title;
+    document.getElementById("confirmMessage").textContent = message;
+
+    confirmCallback = callback;
+
+    confirmModal.style.display = "flex";
+}
+
+
+function closeConfirm() {
+
+    if (confirmModal) {
+        confirmModal.style.display = "none";
+    }
+
+    confirmCallback = null;
+}
+
+
+/* =========================================================
    ESTADO DO APLICATIVO
    ========================================================= */
 
@@ -140,6 +220,13 @@ let conversationCounter = 0;
 let totalMessages = 0;
 
 let currentConversationId = null;
+
+// Armazena a última pergunta para "Regenerar"
+let lastQuestion = null;
+let lastQuestionConversationId = null;
+
+// Debounce para copiar
+let copyTimeout = null;
 
 
 /* =========================================================
@@ -515,18 +602,41 @@ function friendlyError(msg) {
 
 
 /* =========================================================
-   ERRO EXTERNO
+   ERRO EXTERNO - AGORA RECEBE JSON
    ========================================================= */
 
 window.orbitError =
-    function (errorMsg) {
+    function (jsonOrError) {
 
         removeTyping();
 
+        let errorMessage = "Erro desconhecido";
+
+
+        try {
+
+            // Tenta fazer parse se for JSON
+            const parsed = JSON.parse(jsonOrError);
+
+            errorMessage =
+                parsed.errorMessage ||
+                friendlyError(parsed.content || "");
+
+        } catch (e) {
+
+            // Se não for JSON, trata como string normal
+            errorMessage =
+                friendlyError(jsonOrError);
+
+        }
+
+
         addMessage(
             "assistant",
-            friendlyError(errorMsg),
-            true
+            errorMessage,
+            "error",
+            true,
+            []
         );
 
 
@@ -547,22 +657,16 @@ window.orbitError =
 
 
 /* =========================================================
-   MENSAGENS
+   MENSAGENS (ATUALIZADO COM ORIGEM E FONTES)
    ========================================================= */
 
 function addMessage(
     role,
     text,
-    isError,
-    persist
+    origin = "unknown",
+    isError = false,
+    sources = []
 ) {
-
-    if (persist === undefined) {
-
-        persist = true;
-
-    }
-
 
     const emptyNode =
         document.getElementById(
@@ -606,215 +710,363 @@ function addMessage(
         );
 
 
-    bubble.textContent =
-        text;
+    bubble.innerHTML =
+        `<div class="message-text">${escapeHtml(text)}</div>`;
 
+
+    // ===== ADICIONA ORIGEM E FONTES (NOVO) =====
+
+    if (role === "assistant" && !isError) {
+
+        const metadataDiv =
+            document.createElement("div");
+
+        metadataDiv.className =
+            "message-metadata";
+
+
+        // Indicador de origem
+
+        const originBadge =
+            document.createElement("span");
+
+        originBadge.className =
+            `origin-badge origin-${origin}`;
+
+
+        const originLabels = {
+
+            "rag":
+                "📚 Base de Conhecimento (RAG)",
+
+            "fallback":
+                "🌐 Resposta Geral",
+
+            "internet":
+                "🔗 Internet",
+
+            "error":
+                "❌ Erro"
+
+        };
+
+
+        originBadge.textContent =
+            originLabels[origin] ||
+            "❓ Desconhecido";
+
+
+        metadataDiv.appendChild(
+            originBadge
+        );
+
+
+        // Mostrar fontes se disponíveis
+
+        if (sources && sources.length > 0) {
+
+            const sourcesSpan =
+                document.createElement("span");
+
+            sourcesSpan.className =
+                "sources-badge";
+
+            sourcesSpan.textContent =
+                `📄 Fontes: ${sources.join(", ")}`;
+
+            metadataDiv.appendChild(
+                sourcesSpan
+            );
+
+        }
+
+
+        bubble.appendChild(
+            metadataDiv
+        );
+
+    }
+
+
+    // Botões de ação
+
+    const buttonsDiv =
+        document.createElement("div");
+
+    buttonsDiv.className =
+        "message-actions";
+
+
+    // =====================================================
+    // BOTÃO COPIAR (CORRIGIDO)
+    // =====================================================
 
     if (!isError) {
 
-        const btn =
+        const copyBtn =
             document.createElement("button");
 
 
-        btn.className =
+        copyBtn.className =
             "copy-btn";
 
 
-        btn.textContent =
+        copyBtn.textContent =
             "📋 Copiar";
 
 
-        btn.onclick =
-            () => {
+        copyBtn.type =
+            "button";
+
+
+        copyBtn.onclick = (event) => {
+
+            event.stopPropagation();
+            event.preventDefault();
+
+
+            // Evita múltiplos cliques simultâneos
+
+            if (copyTimeout) {
+
+                return;
+
+            }
+
+
+            copyTimeout =
+                setTimeout(() => {
+
+                    copyTimeout = null;
+
+                }, 1000);
+
+
+            const showResult = (ok) => {
+
+                copyBtn.textContent =
+                    ok ? "✓ Copiado!" : "❌ Erro";
+
+                setTimeout(() => {
+
+                    copyBtn.textContent =
+                        "📋 Copiar";
+
+                }, 1800);
+
+            };
+
+
+            // Fallback síncrono via execCommand (nunca trava,
+            // funciona mesmo em WebKit antigo)
+
+            const copyWithExecCommand = () => {
 
                 try {
 
-                    /*
-                     * =================================================
-                     * COPIAR USANDO A BRIDGE DO JAVA
-                     * =================================================
-                     *
-                     * O JavaFX possui acesso direto à área de
-                     * transferência do sistema operacional.
-                     *
-                     * Isso evita os problemas do
-                     * navigator.clipboard dentro do WebView.
-                     */
+                    const textarea =
+                        document.createElement("textarea");
 
-                    if (
-                        window.orbitBridge &&
-                        typeof window.orbitBridge.copyToClipboard ===
-                        "function"
-                    ) {
+                    textarea.value = text;
+                    textarea.style.position = "fixed";
+                    textarea.style.opacity = "0";
+                    textarea.style.top = "0";
+                    textarea.style.left = "0";
 
-                        window.orbitBridge.copyToClipboard(
-                            text
-                        );
+                    document.body.appendChild(textarea);
+                    textarea.focus();
+                    textarea.select();
 
+                    const sucesso =
+                        document.execCommand("copy");
 
-                        btn.textContent =
-                            "Copiado!";
+                    document.body.removeChild(textarea);
 
-
-                        setTimeout(
-                            () => {
-
-                                btn.textContent =
-                                    "📋 Copiar";
-
-                            },
-                            1800
-                        );
-
-
-                        return;
-                    }
-
-
-                    /*
-                     * =================================================
-                     * FALLBACK
-                     * =================================================
-                     *
-                     * Caso o projeto esteja sendo executado
-                     * fora do JavaFX, tenta utilizar o clipboard
-                     * nativo do navegador.
-                     */
-
-                    if (
-                        navigator.clipboard &&
-                        typeof navigator.clipboard.writeText ===
-                        "function"
-                    ) {
-
-                        navigator.clipboard
-                            .writeText(text)
-                            .then(() => {
-
-                                btn.textContent =
-                                    "Copiado!";
-
-
-                                setTimeout(
-                                    () => {
-
-                                        btn.textContent =
-                                            "📋 Copiar";
-
-                                    },
-                                    1800
-                                );
-
-                            })
-                            .catch(() => {
-
-                                btn.textContent =
-                                    "Erro ao copiar";
-
-
-                                setTimeout(
-                                    () => {
-
-                                        btn.textContent =
-                                            "📋 Copiar";
-
-                                    },
-                                    1800
-                                );
-
-                            });
-
-
-                        return;
-                    }
-
-
-                    /*
-                     * =================================================
-                     * CASO NENHUM MÉTODO ESTEJA DISPONÍVEL
-                     * =================================================
-                     */
-
-                    btn.textContent =
-                        "Erro ao copiar";
-
-
-                    setTimeout(
-                        () => {
-
-                            btn.textContent =
-                                "📋 Copiar";
-
-                        },
-                        1800
-                    );
-
+                    return sucesso;
 
                 } catch (e) {
 
                     console.error(
-                        "Erro ao copiar:",
+                        "Erro no execCommand:",
                         e
                     );
 
-
-                    btn.textContent =
-                        "Erro ao copiar";
-
-
-                    setTimeout(
-                        () => {
-
-                            btn.textContent =
-                                "📋 Copiar";
-
-                        },
-                        1800
-                    );
+                    return false;
 
                 }
 
             };
 
-        bubble.appendChild(btn);
+
+            /*
+             * MÉTODO PRINCIPAL: ponte Java (window.orbitBridge.copyToClipboard).
+             *
+             * IMPORTANTE: navigator.clipboard.writeText() NUNCA deve ser
+             * usado aqui dentro do WebView do JavaFX. A Promise dessa API
+             * pode nunca resolver nesse motor, e como o WebView roda na
+             * mesma thread de toda a interface JavaFX, isso trava a
+             * aplicação inteira (não responde mais a nada).
+             */
+
+            if (
+                window.orbitBridge &&
+                typeof window.orbitBridge.copyToClipboard === "function"
+            ) {
+
+                try {
+
+                    const ok =
+                        window.orbitBridge.copyToClipboard(text);
+
+                    showResult(ok !== false);
+
+                    return;
+
+                } catch (e) {
+
+                    console.error(
+                        "Erro ao copiar via bridge:",
+                        e
+                    );
+
+                    // Se a ponte falhar, cai para o fallback abaixo
+
+                }
+
+            }
+
+
+            // Fallback fora do JavaFX ou se a ponte falhar
+
+            const ok = copyWithExecCommand();
+
+            showResult(ok);
+
+        };
+
+
+        buttonsDiv.appendChild(
+            copyBtn
+        );
 
     }
 
 
-    row.appendChild(bubble);
+    // Botão Regenerar
+    // apenas para respostas do Orbit
+
+    if (
+        role === "assistant" &&
+        !isError &&
+        origin !== "error"
+    ) {
+
+        const regenerateBtn =
+            document.createElement("button");
 
 
-    messagesEl.appendChild(row);
+        regenerateBtn.className =
+            "regenerate-btn";
+
+
+        regenerateBtn.textContent =
+            "🔄 Regenerar";
+
+
+        regenerateBtn.type =
+            "button";
+
+
+        regenerateBtn.onclick =
+            () => regenerarResposta();
+
+
+        buttonsDiv.appendChild(
+            regenerateBtn
+        );
+
+    }
+
+
+    bubble.appendChild(
+        buttonsDiv
+    );
+
+
+    row.appendChild(
+        bubble
+    );
+
+
+    messagesEl.appendChild(
+        row
+    );
 
 
     messagesEl.scrollTop =
         messagesEl.scrollHeight;
 
 
-    if (persist) {
+    // Persiste a mensagem na conversa
 
-        const conv =
-            findConversation(
-                currentConversationId
-            );
+    const conv =
+        findConversation(
+            currentConversationId
+        );
 
 
-        if (conv) {
+    if (conv) {
 
-            conv.messages.push({
+        conv.messages.push({
 
-                role: role,
+            role:
+            role,
 
-                text: text,
+            text:
+            text,
 
-                isError:
-                    !!isError
+            origin:
+            origin,
 
-            });
+            sources:
+                sources || [],
 
-        }
+            isError:
+                !!isError
+
+        });
 
     }
+
+}
+
+
+function escapeHtml(text) {
+
+    const map = {
+
+        '&':
+            '&amp;',
+
+        '<':
+            '&lt;',
+
+        '>':
+            '&gt;',
+
+        '"':
+            '&quot;',
+
+        "'":
+            '&#039;'
+
+    };
+
+
+    return text.replace(
+        /[&<>"']/g,
+        m => map[m]
+    );
 
 }
 
@@ -888,33 +1140,85 @@ function removeTyping() {
 
 
 /* =========================================================
-   RECEBER RESPOSTA DO JAVA
+   RECEBER RESPOSTA DO JAVA (ATUALIZADO)
    ========================================================= */
 
 window.orbitReceive =
-    function (response) {
+    function (jsonResponse) {
 
         removeTyping();
 
-
-        addMessage(
-            "assistant",
-            response
-        );
+        let response;
 
 
-        totalMessages++;
+        try {
+
+            response =
+                JSON.parse(jsonResponse);
+
+        } catch (e) {
+
+            // Fallback se não for JSON válido
+
+            addMessage(
+                "assistant",
+                jsonResponse,
+                "fallback",
+                false,
+                []
+            );
 
 
-        if (convCount) {
+            busy = false;
 
-            convCount.textContent =
-                totalMessages;
+            setState("idle");
+
+            return;
 
         }
 
 
-        updateProfileStats();
+        // Extrai os dados da resposta
+
+        const content =
+            response.content || "";
+
+        const origin =
+            response.origin || "unknown";
+
+        const sources =
+            response.sources || [];
+
+
+        const success =
+            response.success !== false;
+
+
+        if (success) {
+
+            addMessage(
+                "assistant",
+                content,
+                origin,
+                false,
+                sources
+            );
+
+
+            totalMessages++;
+
+
+            if (convCount) {
+
+                convCount.textContent =
+                    totalMessages;
+
+            }
+
+
+            updateProfileStats();
+
+        }
 
 
         busy = false;
@@ -938,6 +1242,164 @@ window.orbitReceive =
         }
 
     };
+
+
+/* =========================================================
+   REGENERAR RESPOSTA (CORRIGIDO)
+   ========================================================= */
+
+function regenerarResposta() {
+
+    if (
+        busy ||
+        !lastQuestion
+    ) {
+
+        return;
+
+    }
+
+
+    // Remove a última bolha do Orbit do DOM
+
+    const messages =
+        messagesEl.querySelectorAll(".msg");
+
+
+    if (messages.length > 0) {
+
+        const lastMsg =
+            messages[messages.length - 1];
+
+
+        if (
+            lastMsg.classList.contains("orbit")
+        ) {
+
+            lastMsg.remove();
+
+        }
+
+    }
+
+
+    // Remove a última resposta do Orbit
+    // do histórico salvo na conversa
+
+    const conv =
+        findConversation(
+            currentConversationId
+        );
+
+
+    if (
+        conv &&
+        conv.messages.length > 0
+    ) {
+
+        const ultimaMsg =
+            conv.messages[
+            conv.messages.length - 1
+                ];
+
+
+        if (
+            ultimaMsg.role === "assistant"
+        ) {
+
+            conv.messages.pop();
+
+        }
+
+    }
+
+
+    if (!navigator.onLine) {
+
+        addMessage(
+            "assistant",
+            friendlyError(null),
+            "error",
+            true,
+            []
+        );
+
+        return;
+
+    }
+
+
+    busy = true;
+
+
+    if (chatSendBtn) {
+
+        chatSendBtn.disabled =
+            true;
+
+    }
+
+
+    setState("thinking");
+
+    showTyping();
+
+
+    if (
+        window.orbitBridge &&
+        typeof window.orbitBridge.ask ===
+        "function"
+    ) {
+
+        try {
+
+            window.orbitBridge.ask(
+                lastQuestion
+            );
+
+        } catch (e) {
+
+            window.orbitError(
+                JSON.stringify({
+
+                    errorMessage:
+                        "Erro ao comunicar com a ponte do Java.",
+
+                    success:
+                        false
+
+                })
+            );
+
+        }
+
+    } else {
+
+        setTimeout(() => {
+
+            window.orbitReceive(
+                JSON.stringify({
+
+                    content:
+                        "Resposta simulada (fora do JavaFX).",
+
+                    origin:
+                        "fallback",
+
+                    sources:
+                        [],
+
+                    success:
+                        true
+
+                })
+            );
+
+        }, 900);
+
+    }
+
+}
 
 
 /* =========================================================
@@ -991,13 +1453,13 @@ function createConversationTitle(
         title:
         conversationTitle,
 
-        messages: []
+        messages:
+            []
 
     });
 
 
     renderHistory();
-
 
     updateProfileStats();
 
@@ -1005,7 +1467,7 @@ function createConversationTitle(
 
 
 /* =========================================================
-   HISTÓRICO
+   HISTÓRICO (ATUALIZADO COM EXCLUIR E RENOMEAR)
    ========================================================= */
 
 function findConversation(id) {
@@ -1039,6 +1501,14 @@ function renderHistory() {
     conversations.forEach(
         conversation => {
 
+            const itemContainer =
+                document.createElement("div");
+
+
+            itemContainer.className =
+                "history-item-container";
+
+
             const btn =
                 document.createElement(
                     "button"
@@ -1066,11 +1536,225 @@ function renderHistory() {
                     );
 
 
-            historyList.appendChild(
+            itemContainer.appendChild(
                 btn
             );
 
+
+            // ===== BOTÕES DE AÇÃO (NOVO) =====
+
+            const actionsDiv =
+                document.createElement("div");
+
+
+            actionsDiv.className =
+                "history-item-actions";
+
+
+            // Botão Renomear
+
+            const renameBtn =
+                document.createElement("button");
+
+
+            renameBtn.className =
+                "history-action-btn rename-btn";
+
+
+            renameBtn.title =
+                "Renomear conversa";
+
+
+            renameBtn.innerHTML =
+                "✎";
+
+
+            renameBtn.type =
+                "button";
+
+
+            renameBtn.onclick =
+                (e) => {
+
+                    e.stopPropagation();
+
+                    renomearConversa(
+                        conversation.id
+                    );
+
+                };
+
+
+            actionsDiv.appendChild(
+                renameBtn
+            );
+
+
+            // Botão Excluir
+
+            const deleteBtn =
+                document.createElement("button");
+
+
+            deleteBtn.className =
+                "history-action-btn delete-btn";
+
+
+            deleteBtn.title =
+                "Excluir conversa";
+
+
+            deleteBtn.innerHTML =
+                "🗑";
+
+
+            deleteBtn.type =
+                "button";
+
+
+            deleteBtn.onclick =
+                (e) => {
+
+                    e.stopPropagation();
+
+                    apagarConversa(
+                        conversation.id
+                    );
+
+                };
+
+
+            actionsDiv.appendChild(
+                deleteBtn
+            );
+
+
+            itemContainer.appendChild(
+                actionsDiv
+            );
+
+
+            historyList.appendChild(
+                itemContainer
+            );
+
         }
+    );
+
+}
+
+
+/* =========================================================
+   RENOMEAR CONVERSA
+   ========================================================= */
+
+function renomearConversa(id) {
+
+    const conv =
+        findConversation(id);
+
+
+    if (!conv) {
+
+        return;
+
+    }
+
+
+    const novoNome =
+        prompt(
+            "Novo título da conversa:",
+            conv.title
+        );
+
+
+    if (
+        novoNome &&
+        novoNome.trim()
+    ) {
+
+        conv.title =
+            novoNome.trim();
+
+
+        if (
+            id === currentConversationId
+        ) {
+
+            chatTitle.textContent =
+                conv.title.toUpperCase();
+
+        }
+
+
+        renderHistory();
+
+    }
+
+}
+
+
+/* =========================================================
+   APAGAR CONVERSA (COM CONFIRMAÇÃO)
+   ========================================================= */
+
+function apagarConversa(id) {
+
+    const conv =
+        findConversation(id);
+
+
+    if (!conv) {
+
+        return;
+
+    }
+
+
+    showConfirm(
+
+        "Excluir conversa?",
+
+        `Tem certeza que deseja excluir a conversa "${conv.title}"? Esta ação não pode ser desfeita.`,
+
+        (confirmed) => {
+
+            if (confirmed) {
+
+                // Remove a conversa
+
+                conversations =
+                    conversations.filter(
+                        c => c.id !== id
+                    );
+
+
+                // Se era a conversa atual,
+                // volta para home
+
+                if (
+                    currentConversationId === id
+                ) {
+
+                    currentConversationId =
+                        null;
+
+                    conversationTitle =
+                        "";
+
+                    startNewChat();
+
+                }
+
+
+                renderHistory();
+
+                updateProfileStats();
+
+            }
+
+        }
+
     );
 
 }
@@ -1101,10 +1785,20 @@ function renderMessages(msgs) {
     msgs.forEach(message => {
 
         addMessage(
+
             message.role,
+
             message.text,
-            message.isError,
-            false
+
+            message.origin ||
+            "unknown",
+
+            message.isError ||
+            false,
+
+            message.sources ||
+            []
+
         );
 
     });
@@ -1273,11 +1967,6 @@ window.orbitSubmit =
    PERFIL
    ========================================================= */
 
-
-/*
- * Atualiza avatar, contador e saudação.
- */
-
 function updateProfileNameUI(nome) {
 
     const valor =
@@ -1285,8 +1974,6 @@ function updateProfileNameUI(nome) {
             .trim()
             .replace(/\s+/g, " ");
 
-
-    /* Inicial */
 
     const inicial =
         valor
@@ -1304,8 +1991,6 @@ function updateProfileNameUI(nome) {
     }
 
 
-    /* Contador */
-
     const counter =
         document.getElementById(
             "profileNameCounter"
@@ -1319,8 +2004,6 @@ function updateProfileNameUI(nome) {
 
     }
 
-
-    /* Saudação */
 
     const greeting =
         document.getElementById(
@@ -1349,10 +2032,6 @@ function updateProfileNameUI(nome) {
 }
 
 
-/*
- * Recupera o nome salvo.
- */
-
 function loadProfile() {
 
     let nome = "";
@@ -1364,6 +2043,7 @@ function loadProfile() {
             localStorage.getItem(
                 "orbit-username"
             ) || "";
+
 
     } catch (e) {
 
@@ -1389,10 +2069,6 @@ function loadProfile() {
 
 }
 
-
-/*
- * Salva o nome.
- */
 
 function saveProfile() {
 
@@ -1436,8 +2112,6 @@ function saveProfile() {
         nome
     );
 
-
-    /* Feedback */
 
     if (saveProfileBtn) {
 
@@ -1514,10 +2188,6 @@ function saveProfile() {
 }
 
 
-/*
- * Estatísticas.
- */
-
 function updateProfileStats() {
 
     if (profileMsgCount) {
@@ -1542,9 +2212,6 @@ function updateProfileStats() {
    EVENTOS DO PERFIL
    ========================================================= */
 
-
-/* Digitação */
-
 if (profileNameInput) {
 
     profileNameInput.addEventListener(
@@ -1558,8 +2225,6 @@ if (profileNameInput) {
         }
     );
 
-
-    /* ENTER salva */
 
     profileNameInput.addEventListener(
         "keydown",
@@ -1581,8 +2246,6 @@ if (profileNameInput) {
 }
 
 
-/* Botão salvar */
-
 if (saveProfileBtn) {
 
     saveProfileBtn.addEventListener(
@@ -1592,8 +2255,6 @@ if (saveProfileBtn) {
 
 }
 
-
-/* Abrir perfil */
 
 if (sidebarProfileBtn) {
 
@@ -1636,24 +2297,16 @@ if (sidebarProfileBtn) {
 async function pasteInto(inputEl) {
 
     if (!inputEl) {
+
         return;
+
     }
 
 
     try {
 
-        let texto =
-            "";
+        let texto = "";
 
-
-        /*
-         * =================================================
-         * COLAR USANDO A BRIDGE DO JAVA
-         * =================================================
-         *
-         * O método pasteFromClipboard()
-         * já está disponível no JSBridge.java.
-         */
 
         if (
             window.orbitBridge &&
@@ -1667,16 +2320,6 @@ async function pasteInto(inputEl) {
 
         }
 
-
-        /*
-         * =================================================
-         * FALLBACK
-         * =================================================
-         *
-         * Caso a Bridge não esteja disponível,
-         * tenta utilizar o clipboard do navegador.
-         */
-
         else if (
             navigator.clipboard &&
             typeof navigator.clipboard.readText ===
@@ -1689,22 +2332,11 @@ async function pasteInto(inputEl) {
         }
 
 
-        /*
-         * =================================================
-         * INSERE O TEXTO NO CAMPO
-         * =================================================
-         */
-
         if (texto) {
 
             inputEl.value =
                 texto;
 
-
-            /*
-             * Informa aos listeners existentes que
-             * o conteúdo do campo foi alterado.
-             */
 
             inputEl.dispatchEvent(
                 new Event(
@@ -1728,10 +2360,6 @@ async function pasteInto(inputEl) {
         }
 
 
-        /*
-         * Mantém o foco no campo.
-         */
-
         inputEl.focus();
 
 
@@ -1742,11 +2370,6 @@ async function pasteInto(inputEl) {
             e
         );
 
-
-        /*
-         * Não cria uma mensagem do Orbit
-         * dentro do chat caso o clipboard falhe.
-         */
 
         inputEl.focus();
 
@@ -1782,7 +2405,7 @@ if (chatPasteBtn) {
 
 
 /* =========================================================
-   ENVIO
+   ENVIO DE MENSAGENS
    ========================================================= */
 
 function sendMessage(text) {
@@ -1791,7 +2414,10 @@ function sendMessage(text) {
         text.trim();
 
 
-    if (!text || busy) {
+    if (
+        !text ||
+        busy
+    ) {
 
         return;
 
@@ -1803,7 +2429,9 @@ function sendMessage(text) {
         addMessage(
             "assistant",
             friendlyError(null),
-            true
+            "error",
+            true,
+            []
         );
 
         return;
@@ -1829,7 +2457,10 @@ function sendMessage(text) {
 
     addMessage(
         "user",
-        text
+        text,
+        "user",
+        false,
+        []
     );
 
 
@@ -1858,6 +2489,15 @@ function sendMessage(text) {
     showTyping();
 
 
+    // Armazena a última pergunta para regenerar
+
+    lastQuestion =
+        text;
+
+    lastQuestionConversationId =
+        currentConversationId;
+
+
     /* =====================================================
        PONTE JAVA
        ===================================================== */
@@ -1877,23 +2517,42 @@ function sendMessage(text) {
         } catch (e) {
 
             window.orbitError(
-                "Erro ao comunicar com a ponte do Java."
+                JSON.stringify({
+
+                    errorMessage:
+                        "Erro ao comunicar com a ponte do Java.",
+
+                    success:
+                        false
+
+                })
             );
 
         }
 
     } else {
 
-        /*
-         * Somente fallback caso o JavaFX
-         * não esteja executando.
-         */
+        // Fallback fora do JavaFX
 
         setTimeout(
             () => {
 
                 window.orbitReceive(
-                    "Resposta simulada (fora do JavaFX)."
+                    JSON.stringify({
+
+                        content:
+                            "Resposta simulada (fora do JavaFX).",
+
+                        origin:
+                            "fallback",
+
+                        sources:
+                            [],
+
+                        success:
+                            true
+
+                    })
                 );
 
             },
@@ -1976,7 +2635,7 @@ if (chatAskBar) {
 
 
 /* =========================================================
-   PILLS
+   PILLS (SUGESTÕES RÁPIDAS)
    ========================================================= */
 
 document
@@ -1988,6 +2647,7 @@ document
             () => {
 
                 showView("chat");
+
 
                 sendMessage(
                     pill.dataset.q
