@@ -124,7 +124,7 @@ const chatPasteBtn =
 
 
 /* =========================================================
-   MODAL DE CONFIRMAÇÃO (NOVO)
+   MODAL DE CONFIRMAÇÃO
    ========================================================= */
 
 let confirmModal = null;
@@ -200,6 +200,104 @@ function closeConfirm() {
     }
 
     confirmCallback = null;
+}
+
+
+/* =========================================================
+   MODAL DE RENOMEAR (CORRIGIDO — substitui o prompt() nativo,
+   que não funciona dentro do WebView do JavaFX porque o
+   WebEngine não tem um PromptHandler configurado. Sem esse
+   handler, window.prompt() retorna null silenciosamente,
+   sem erro e sem exibir nada — por isso "não editava".)
+   ========================================================= */
+
+let renameModal = null;
+let renameCallback = null;
+
+
+function createRenameModal() {
+
+    const modal = document.createElement("div");
+    modal.id = "renameModal";
+    modal.className = "modal-overlay confirmation-modal";
+    modal.style.display = "none";
+
+    modal.innerHTML = `
+        <div class="modal-box confirmation-box">
+            <div class="modal-header">
+                <h3>Renomear conversa</h3>
+                <button class="modal-close" id="renameClose" type="button">✕</button>
+            </div>
+            <input
+                type="text"
+                id="renameInput"
+                class="rename-input"
+                maxlength="60"
+                placeholder="Digite o novo título" />
+            <div class="confirmation-buttons">
+                <button id="renameSave" class="btn-confirm-yes" type="button">Salvar</button>
+                <button id="renameCancel" class="btn-confirm-no" type="button">Cancelar</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const input = document.getElementById("renameInput");
+
+    const finalizar = (valor) => {
+
+        if (renameCallback) {
+            renameCallback(valor);
+        }
+
+        renameModal.style.display = "none";
+        renameCallback = null;
+    };
+
+    document.getElementById("renameClose")
+        .addEventListener("click", () => finalizar(null));
+
+    document.getElementById("renameCancel")
+        .addEventListener("click", () => finalizar(null));
+
+    document.getElementById("renameSave")
+        .addEventListener("click", () => finalizar(input.value.trim()));
+
+    input.addEventListener("keydown", (event) => {
+
+        if (event.key === "Enter") {
+            event.preventDefault();
+            finalizar(input.value.trim());
+        }
+
+        if (event.key === "Escape") {
+            event.preventDefault();
+            finalizar(null);
+        }
+    });
+
+    return modal;
+}
+
+
+function showRename(valorAtual, callback) {
+
+    if (!renameModal) {
+        renameModal = createRenameModal();
+    }
+
+    const input = document.getElementById("renameInput");
+    input.value = valorAtual || "";
+
+    renameCallback = callback;
+
+    renameModal.style.display = "flex";
+
+    setTimeout(() => {
+        input.focus();
+        input.select();
+    }, 50);
 }
 
 
@@ -602,7 +700,7 @@ function friendlyError(msg) {
 
 
 /* =========================================================
-   ERRO EXTERNO - AGORA RECEBE JSON
+   ERRO EXTERNO - RECEBE JSON
    ========================================================= */
 
 window.orbitError =
@@ -615,7 +713,6 @@ window.orbitError =
 
         try {
 
-            // Tenta fazer parse se for JSON
             const parsed = JSON.parse(jsonOrError);
 
             errorMessage =
@@ -624,7 +721,6 @@ window.orbitError =
 
         } catch (e) {
 
-            // Se não for JSON, trata como string normal
             errorMessage =
                 friendlyError(jsonOrError);
 
@@ -657,7 +753,7 @@ window.orbitError =
 
 
 /* =========================================================
-   MENSAGENS (ATUALIZADO COM ORIGEM E FONTES)
+   MENSAGENS (COM ORIGEM E FONTES)
    ========================================================= */
 
 function addMessage(
@@ -714,8 +810,6 @@ function addMessage(
         `<div class="message-text">${escapeHtml(text)}</div>`;
 
 
-    // ===== ADICIONA ORIGEM E FONTES (NOVO) =====
-
     if (role === "assistant" && !isError) {
 
         const metadataDiv =
@@ -724,8 +818,6 @@ function addMessage(
         metadataDiv.className =
             "message-metadata";
 
-
-        // Indicador de origem
 
         const originBadge =
             document.createElement("span");
@@ -761,8 +853,6 @@ function addMessage(
         );
 
 
-        // Mostrar fontes se disponíveis
-
         if (sources && sources.length > 0) {
 
             const sourcesSpan =
@@ -788,8 +878,6 @@ function addMessage(
     }
 
 
-    // Botões de ação
-
     const buttonsDiv =
         document.createElement("div");
 
@@ -797,9 +885,7 @@ function addMessage(
         "message-actions";
 
 
-    // =====================================================
-    // BOTÃO COPIAR (CORRIGIDO)
-    // =====================================================
+    /* ===== BOTÃO COPIAR ===== */
 
     if (!isError) {
 
@@ -824,8 +910,6 @@ function addMessage(
             event.stopPropagation();
             event.preventDefault();
 
-
-            // Evita múltiplos cliques simultâneos
 
             if (copyTimeout) {
 
@@ -856,9 +940,6 @@ function addMessage(
 
             };
 
-
-            // Fallback síncrono via execCommand (nunca trava,
-            // funciona mesmo em WebKit antigo)
 
             const copyWithExecCommand = () => {
 
@@ -898,16 +979,6 @@ function addMessage(
             };
 
 
-            /*
-             * MÉTODO PRINCIPAL: ponte Java (window.orbitBridge.copyToClipboard).
-             *
-             * IMPORTANTE: navigator.clipboard.writeText() NUNCA deve ser
-             * usado aqui dentro do WebView do JavaFX. A Promise dessa API
-             * pode nunca resolver nesse motor, e como o WebView roda na
-             * mesma thread de toda a interface JavaFX, isso trava a
-             * aplicação inteira (não responde mais a nada).
-             */
-
             if (
                 window.orbitBridge &&
                 typeof window.orbitBridge.copyToClipboard === "function"
@@ -929,14 +1000,10 @@ function addMessage(
                         e
                     );
 
-                    // Se a ponte falhar, cai para o fallback abaixo
-
                 }
 
             }
 
-
-            // Fallback fora do JavaFX ou se a ponte falhar
 
             const ok = copyWithExecCommand();
 
@@ -951,9 +1018,6 @@ function addMessage(
 
     }
 
-
-    // Botão Regenerar
-    // apenas para respostas do Orbit
 
     if (
         role === "assistant" &&
@@ -1006,8 +1070,6 @@ function addMessage(
     messagesEl.scrollTop =
         messagesEl.scrollHeight;
 
-
-    // Persiste a mensagem na conversa
 
     const conv =
         findConversation(
@@ -1140,7 +1202,7 @@ function removeTyping() {
 
 
 /* =========================================================
-   RECEBER RESPOSTA DO JAVA (ATUALIZADO)
+   RECEBER RESPOSTA DO JAVA
    ========================================================= */
 
 window.orbitReceive =
@@ -1157,8 +1219,6 @@ window.orbitReceive =
                 JSON.parse(jsonResponse);
 
         } catch (e) {
-
-            // Fallback se não for JSON válido
 
             addMessage(
                 "assistant",
@@ -1177,8 +1237,6 @@ window.orbitReceive =
 
         }
 
-
-        // Extrai os dados da resposta
 
         const content =
             response.content || "";
@@ -1245,7 +1303,7 @@ window.orbitReceive =
 
 
 /* =========================================================
-   REGENERAR RESPOSTA (CORRIGIDO)
+   REGENERAR RESPOSTA
    ========================================================= */
 
 function regenerarResposta() {
@@ -1259,8 +1317,6 @@ function regenerarResposta() {
 
     }
 
-
-    // Remove a última bolha do Orbit do DOM
 
     const messages =
         messagesEl.querySelectorAll(".msg");
@@ -1282,9 +1338,6 @@ function regenerarResposta() {
 
     }
 
-
-    // Remove a última resposta do Orbit
-    // do histórico salvo na conversa
 
     const conv =
         findConversation(
@@ -1467,7 +1520,7 @@ function createConversationTitle(
 
 
 /* =========================================================
-   HISTÓRICO (ATUALIZADO COM EXCLUIR E RENOMEAR)
+   HISTÓRICO (COM EXCLUIR E RENOMEAR)
    ========================================================= */
 
 function findConversation(id) {
@@ -1541,8 +1594,6 @@ function renderHistory() {
             );
 
 
-            // ===== BOTÕES DE AÇÃO (NOVO) =====
-
             const actionsDiv =
                 document.createElement("div");
 
@@ -1550,8 +1601,6 @@ function renderHistory() {
             actionsDiv.className =
                 "history-item-actions";
 
-
-            // Botão Renomear
 
             const renameBtn =
                 document.createElement("button");
@@ -1589,8 +1638,6 @@ function renderHistory() {
                 renameBtn
             );
 
-
-            // Botão Excluir
 
             const deleteBtn =
                 document.createElement("button");
@@ -1645,52 +1692,31 @@ function renderHistory() {
 
 
 /* =========================================================
-   RENOMEAR CONVERSA
+   RENOMEAR CONVERSA (CORRIGIDO — usa modal customizado
+   em vez de prompt() nativo, que não funciona no WebView)
    ========================================================= */
 
 function renomearConversa(id) {
 
-    const conv =
-        findConversation(id);
-
+    const conv = findConversation(id);
 
     if (!conv) {
-
         return;
-
     }
 
+    showRename(conv.title, (novoNome) => {
 
-    const novoNome =
-        prompt(
-            "Novo título da conversa:",
-            conv.title
-        );
+        if (novoNome && novoNome.trim()) {
 
+            conv.title = novoNome.trim();
 
-    if (
-        novoNome &&
-        novoNome.trim()
-    ) {
+            if (id === currentConversationId) {
+                chatTitle.textContent = conv.title.toUpperCase();
+            }
 
-        conv.title =
-            novoNome.trim();
-
-
-        if (
-            id === currentConversationId
-        ) {
-
-            chatTitle.textContent =
-                conv.title.toUpperCase();
-
+            renderHistory();
         }
-
-
-        renderHistory();
-
-    }
-
+    });
 }
 
 
@@ -1721,16 +1747,11 @@ function apagarConversa(id) {
 
             if (confirmed) {
 
-                // Remove a conversa
-
                 conversations =
                     conversations.filter(
                         c => c.id !== id
                     );
 
-
-                // Se era a conversa atual,
-                // volta para home
 
                 if (
                     currentConversationId === id
@@ -2489,18 +2510,12 @@ function sendMessage(text) {
     showTyping();
 
 
-    // Armazena a última pergunta para regenerar
-
     lastQuestion =
         text;
 
     lastQuestionConversationId =
         currentConversationId;
 
-
-    /* =====================================================
-       PONTE JAVA
-       ===================================================== */
 
     if (
         window.orbitBridge &&
@@ -2531,8 +2546,6 @@ function sendMessage(text) {
         }
 
     } else {
-
-        // Fallback fora do JavaFX
 
         setTimeout(
             () => {
