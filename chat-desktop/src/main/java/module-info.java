@@ -7,8 +7,11 @@ module org.example.chatdesktop {
     requires javafx.media;
 
     requires java.net.http;
+    requires java.sql;
     requires com.google.gson;
     requires jdk.jsobject;
+    requires org.xerial.sqlitejdbc;
+    requires org.slf4j;
 
 
     exports org.example.chatdesktop;

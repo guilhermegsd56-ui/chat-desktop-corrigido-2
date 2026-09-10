@@ -30,6 +30,11 @@ public class Main extends Application {
                     JSObject window = (JSObject) webEngine.executeScript("window");
                     window.setMember("orbitBridge", bridge);
                     webEngine.executeScript("window.orbitBridgeReady = true;");
+
+                    // Carrega o histórico salvo no SQLite assim que a página
+                    // e o bridge estão prontos
+                    bridge.dbLoadHistory();
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

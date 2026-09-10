@@ -1,6 +1,6 @@
 /* =========================================================
    ORBIT AI v2.0
-   SCRIPT PRINCIPAL COM 6 FUNCIONALIDADES NOVAS
+   SCRIPT PRINCIPAL — COM PERSISTÊNCIA SQLite
    ========================================================= */
 
 
@@ -204,11 +204,7 @@ function closeConfirm() {
 
 
 /* =========================================================
-   MODAL DE RENOMEAR (CORRIGIDO — substitui o prompt() nativo,
-   que não funciona dentro do WebView do JavaFX porque o
-   WebEngine não tem um PromptHandler configurado. Sem esse
-   handler, window.prompt() retorna null silenciosamente,
-   sem erro e sem exibir nada — por isso "não editava".)
+   MODAL DE RENOMEAR
    ========================================================= */
 
 let renameModal = null;
@@ -319,11 +315,9 @@ let totalMessages = 0;
 
 let currentConversationId = null;
 
-// Armazena a última pergunta para "Regenerar"
 let lastQuestion = null;
 let lastQuestionConversationId = null;
 
-// Debounce para copiar
 let copyTimeout = null;
 
 
@@ -407,8 +401,6 @@ function showView(name) {
 }
 
 
-/* Logo */
-
 if (logoBtn) {
 
     logoBtn.addEventListener(
@@ -418,8 +410,6 @@ if (logoBtn) {
 
 }
 
-
-/* Voltar */
 
 if (backHomeBtn) {
 
@@ -700,7 +690,7 @@ function friendlyError(msg) {
 
 
 /* =========================================================
-   ERRO EXTERNO - RECEBE JSON
+   ERRO EXTERNO
    ========================================================= */
 
 window.orbitError =
@@ -753,7 +743,7 @@ window.orbitError =
 
 
 /* =========================================================
-   MENSAGENS (COM ORIGEM E FONTES)
+   MENSAGENS (COM ORIGEM, FONTES E PERSISTÊNCIA NO BANCO)
    ========================================================= */
 
 function addMessage(
@@ -884,8 +874,6 @@ function addMessage(
     buttonsDiv.className =
         "message-actions";
 
-
-    /* ===== BOTÃO COPIAR ===== */
 
     if (!isError) {
 
@@ -1100,6 +1088,23 @@ function addMessage(
 
     }
 
+
+    // Persiste a mensagem no banco de dados SQLite
+    if (conv && window.orbitBridge && typeof window.orbitBridge.dbSaveMessage === "function") {
+        try {
+            window.orbitBridge.dbSaveMessage(
+                conv.id,
+                role,
+                text,
+                origin,
+                JSON.stringify(sources || []),
+                !!isError
+            );
+        } catch (e) {
+            console.error("Erro ao salvar mensagem no banco:", e);
+        }
+    }
+
 }
 
 
@@ -1303,6 +1308,42 @@ window.orbitReceive =
 
 
 /* =========================================================
+   CARREGAR HISTÓRICO DO BANCO (SQLite)
+   ========================================================= */
+
+window.orbitLoadHistory = function (jsonArray) {
+
+    try {
+
+        const historico = JSON.parse(jsonArray);
+
+        conversations = historico.map(conv => ({
+            id: conv.id,
+            title: conv.title,
+            messages: (conv.messages || []).map(m => ({
+                role: m.role,
+                text: m.text,
+                origin: m.origin || "unknown",
+                sources: m.sources || [],
+                isError: !!m.isError
+            }))
+        }));
+
+        conversationCounter = conversations.reduce(
+            (max, c) => Math.max(max, c.id),
+            0
+        );
+
+        renderHistory();
+        updateProfileStats();
+
+    } catch (e) {
+        console.error("Erro ao carregar histórico do banco de dados:", e);
+    }
+};
+
+
+/* =========================================================
    REGENERAR RESPOSTA
    ========================================================= */
 
@@ -1362,6 +1403,15 @@ function regenerarResposta() {
 
             conv.messages.pop();
 
+        }
+
+
+        if (window.orbitBridge && typeof window.orbitBridge.dbRemoveLastMessage === "function") {
+            try {
+                window.orbitBridge.dbRemoveLastMessage(conv.id);
+            } catch (e) {
+                console.error("Erro ao remover última mensagem do banco:", e);
+            }
         }
 
     }
@@ -1515,6 +1565,16 @@ function createConversationTitle(
     renderHistory();
 
     updateProfileStats();
+
+
+    // Persiste a nova conversa no banco de dados SQLite
+    if (window.orbitBridge && typeof window.orbitBridge.dbCreateConversation === "function") {
+        try {
+            window.orbitBridge.dbCreateConversation(currentConversationId, conversationTitle);
+        } catch (e) {
+            console.error("Erro ao salvar conversa no banco:", e);
+        }
+    }
 
 }
 
@@ -1692,8 +1752,7 @@ function renderHistory() {
 
 
 /* =========================================================
-   RENOMEAR CONVERSA (CORRIGIDO — usa modal customizado
-   em vez de prompt() nativo, que não funciona no WebView)
+   RENOMEAR CONVERSA
    ========================================================= */
 
 function renomearConversa(id) {
@@ -1715,6 +1774,14 @@ function renomearConversa(id) {
             }
 
             renderHistory();
+
+            if (window.orbitBridge && typeof window.orbitBridge.dbRenameConversation === "function") {
+                try {
+                    window.orbitBridge.dbRenameConversation(id, conv.title);
+                } catch (e) {
+                    console.error("Erro ao renomear conversa no banco:", e);
+                }
+            }
         }
     });
 }
@@ -1771,6 +1838,15 @@ function apagarConversa(id) {
                 renderHistory();
 
                 updateProfileStats();
+
+
+                if (window.orbitBridge && typeof window.orbitBridge.dbDeleteConversation === "function") {
+                    try {
+                        window.orbitBridge.dbDeleteConversation(id);
+                    } catch (e) {
+                        console.error("Erro ao apagar conversa no banco:", e);
+                    }
+                }
 
             }
 
@@ -2830,6 +2906,10 @@ document.addEventListener(
         loadProfile();
 
         updateProfileStats();
+
+        // Nota: o histórico não é renderizado da memória local aqui —
+        // ele chega do Java via window.orbitLoadHistory(), disparado
+        // pelo Main.java assim que o bridge está pronto.
 
     }
 );

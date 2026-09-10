@@ -8,13 +8,18 @@ import javafx.scene.web.WebEngine;
 
 import org.example.chatdesktop.model.MessageResponse;
 import org.example.chatdesktop.service.GroqService;
+import org.example.chatdesktop.service.HistoryDatabase;
 import org.example.chatdesktop.service.RagService;
+
+import java.util.List;
+import java.util.Map;
 
 public class JSBridge {
 
     private final WebEngine engine;
     private final GroqService groqService;
     private final RagService ragService;
+    private final HistoryDatabase historyDatabase;
     private final Gson gson;
 
     public JSBridge(WebEngine engine) {
@@ -22,6 +27,7 @@ public class JSBridge {
         this.engine = engine;
         this.groqService = new GroqService();
         this.ragService = new RagService();
+        this.historyDatabase = new HistoryDatabase();
         this.gson = new Gson();
     }
 
@@ -31,16 +37,11 @@ public class JSBridge {
 
             try {
 
-                /*
-                 * 1. Busca informações relevantes na base de conhecimento
-                 */
                 String contexto = ragService.buscarContexto(prompt);
-
-                // Extrai as fontes usadas na recuperação
                 java.util.List<String> sources = ragService.obterFontesUsadas();
 
                 String promptFinal;
-                String origin; // "rag", "fallback"
+                String origin;
 
                 if (contexto == null || contexto.isBlank()) {
 
@@ -80,14 +81,8 @@ public class JSBridge {
                                     prompt;
                 }
 
-                /*
-                 * 2. Envia o prompt enriquecido para a Groq
-                 */
                 String resposta = groqService.chat(promptFinal);
 
-                /*
-                 * 3. Monta a resposta com metadados
-                 */
                 MessageResponse response =
                         new MessageResponse.Builder()
                                 .content(resposta)
@@ -96,14 +91,8 @@ public class JSBridge {
                                 .success(true)
                                 .build();
 
-                /*
-                 * 4. Serializa para JSON
-                 */
                 String jsonResponse = gson.toJson(response);
 
-                /*
-                 * 5. Devolve a resposta para o JavaScript
-                 */
                 Platform.runLater(() ->
                         engine.executeScript(
                                 "window.orbitReceive(" +
@@ -121,9 +110,6 @@ public class JSBridge {
                                 ? e.getMessage()
                                 : "Erro desconhecido";
 
-                /*
-                 * Cria uma resposta de erro estruturada
-                 */
                 MessageResponse errorResponse =
                         new MessageResponse.Builder()
                                 .content("")
@@ -149,7 +135,6 @@ public class JSBridge {
     public void newConversation() {
 
         Platform.runLater(() -> {
-            // Lógica interna do Java se necessário
         });
     }
 
@@ -161,7 +146,6 @@ public class JSBridge {
     public void clearInput() {
 
         Platform.runLater(() -> {
-            // Lógica para limpar campos
         });
     }
 
@@ -174,22 +158,6 @@ public class JSBridge {
         );
     }
 
-    /**
-     * Copia o texto para a área de transferência do sistema
-     * usando a API nativa do JavaFX (Clipboard).
-     *
-     * Este é agora o método PRINCIPAL de cópia, chamado
-     * diretamente pelo JavaScript via window.orbitBridge.copyToClipboard().
-     *
-     * IMPORTANTE: não usar Platform.runLater() aqui. Este método é
-     * invocado pelo próprio motor WebKit de forma síncrona, já dentro
-     * da JavaFX Application Thread. Enfileirar a operação com
-     * runLater() criaria uma espera circular (o WebKit aguardando o
-     * retorno síncrono do método, enquanto a fila de eventos ainda
-     * não processou o runLater), o que pode travar a aplicação.
-     *
-     * Retorna true/false para o JavaScript saber se a cópia funcionou.
-     */
     public boolean copyToClipboard(String text) {
 
         try {
@@ -211,30 +179,19 @@ public class JSBridge {
             System.err.println("[Clipboard] Erro ao copiar: " + e.getMessage());
             e.printStackTrace();
             return false;
-
         }
     }
 
-    /**
-     * Obtém o texto da área de transferência
-     * do sistema operacional.
-     */
     public String pasteFromClipboard() {
 
         try {
 
-            final Clipboard clipboard =
-                    Clipboard.getSystemClipboard();
+            final Clipboard clipboard = Clipboard.getSystemClipboard();
 
             if (clipboard.hasString()) {
 
-                String texto =
-                        clipboard.getString();
-
-                return texto != null
-                        ? texto
-                        : "";
-
+                String texto = clipboard.getString();
+                return texto != null ? texto : "";
             }
 
             return "";
@@ -244,21 +201,111 @@ public class JSBridge {
             System.err.println("[Clipboard] Erro ao colar: " + e.getMessage());
             e.printStackTrace();
             return "";
-
         }
+    }
 
+    /* =====================================================
+       PERSISTÊNCIA DO HISTÓRICO (SQLite)
+
+       Todos os métodos abaixo rodam em thread própria para
+       nunca bloquear a JavaFX Application Thread com I/O de
+       disco. Os ids de conversa chegam como "double" porque
+       é o tipo que o motor JS->Java do WebView usa para
+       números por padrão — evita erro de conversão.
+       ===================================================== */
+
+    public void dbCreateConversation(double id, String title) {
+
+        long conversationId = (long) id;
+
+        new Thread(() ->
+                historyDatabase.criarConversa(conversationId, title)
+        ).start();
+    }
+
+    public void dbRenameConversation(double id, String newTitle) {
+
+        long conversationId = (long) id;
+
+        new Thread(() ->
+                historyDatabase.renomearConversa(conversationId, newTitle)
+        ).start();
+    }
+
+    public void dbDeleteConversation(double id) {
+
+        long conversationId = (long) id;
+
+        new Thread(() ->
+                historyDatabase.apagarConversa(conversationId)
+        ).start();
+    }
+
+    public void dbSaveMessage(
+            double conversationId,
+            String role,
+            String text,
+            String origin,
+            String sourcesJson,
+            boolean isError
+    ) {
+
+        long convId = (long) conversationId;
+
+        new Thread(() ->
+                historyDatabase.salvarMensagem(
+                        convId, role, text, origin, sourcesJson, isError
+                )
+        ).start();
+    }
+
+    public void dbRemoveLastMessage(double conversationId) {
+
+        long convId = (long) conversationId;
+
+        new Thread(() ->
+                historyDatabase.removerUltimaMensagem(convId)
+        ).start();
     }
 
     /**
-     * Faz o escape de uma string para ser injetada seguramente no JavaScript
+     * Carrega o histórico completo do banco e devolve para o
+     * JavaScript via window.orbitLoadHistory(json). Chamado
+     * automaticamente pelo Main.java assim que a página termina
+     * de carregar.
      */
+    public void dbLoadHistory() {
+
+        new Thread(() -> {
+
+            try {
+
+                List<Map<String, Object>> historico =
+                        historyDatabase.carregarHistoricoCompleto();
+
+                String json = gson.toJson(historico);
+
+                Platform.runLater(() ->
+                        engine.executeScript(
+                                "window.orbitLoadHistory(" +
+                                        escapeJavaStyleString(json) +
+                                        ")"
+                        )
+                );
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }).start();
+    }
+
     private String escapeJavaStyleString(String str) {
 
         if (str == null) {
             return "\"\"";
         }
 
-        // Usa o Gson pra fazer o escape de forma segura
         return gson.toJson(str);
     }
 
