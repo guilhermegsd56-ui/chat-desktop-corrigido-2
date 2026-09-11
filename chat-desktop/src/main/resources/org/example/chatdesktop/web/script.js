@@ -1,2915 +1,1497 @@
 /* =========================================================
-   ORBIT AI v2.0
-   SCRIPT PRINCIPAL — COM PERSISTÊNCIA SQLite
+   ORBIT AI — AUTENTICAÇÃO, CHAT E HISTÓRICO
    ========================================================= */
 
-
-/* =========================================================
-   REFERÊNCIAS
-   ========================================================= */
-
-const themeStyle =
-    document.getElementById("themeStyle");
-
-const themeToggle =
-    document.getElementById("themeToggle");
-
-const themeText =
-    document.getElementById("themeText");
-
-const themeIcon =
-    document.getElementById("themeIcon");
-
-
-const sidebarNewChat =
-    document.getElementById("sidebarNewChat");
-
-const sidebarProfileBtn =
-    document.getElementById("sidebarProfileBtn");
-
-const logoBtn =
-    document.getElementById("logoBtn");
-
-const backHomeBtn =
-    document.getElementById("backHomeBtn");
-
-
-const historyList =
-    document.getElementById("historyList");
-
-const historyEmpty =
-    document.getElementById("historyEmpty");
-
-const chatTitle =
-    document.getElementById("chatTitle");
-
-const convCount =
-    document.getElementById("convCount");
-
-
-const messagesEl =
-    document.getElementById("messages");
-
-const emptyChat =
-    document.getElementById("emptyChat");
-
-
-const chatAskBar =
-    document.getElementById("chatAskBar");
-
-const chatAskInput =
-    document.getElementById("chatAskInput");
-
-const chatSendBtn =
-    document.getElementById("chatSendBtn");
-
-
-const homeAskBar =
-    document.getElementById("homeAskBar");
-
-const homeAskInput =
-    document.getElementById("homeAskInput");
-
-
-const stateLabel =
-    document.getElementById("stateLabel");
-
-const orbitAI =
-    document.getElementById("orbitAI");
-
-
-/* =========================================================
-   ATALHOS
-   ========================================================= */
-
-const shortcutsBtn =
-    document.getElementById("shortcutsBtn");
-
-const shortcutsModal =
-    document.getElementById("shortcutsModal");
-
-const closeShortcuts =
-    document.getElementById("closeShortcuts");
-
-
-/* =========================================================
-   PERFIL
-   ========================================================= */
-
-const profileNameInput =
-    document.getElementById("profileNameInput");
-
-const profileAvatar =
-    document.getElementById("profileAvatar");
-
-const saveProfileBtn =
-    document.getElementById("saveProfileBtn");
-
-const profileMsgCount =
-    document.getElementById("profileMsgCount");
-
-const profileConvCount =
-    document.getElementById("profileConvCount");
-
-
-/* =========================================================
-   CLIPBOARD
-   ========================================================= */
-
-const homePasteBtn =
-    document.getElementById("homePasteBtn");
-
-const chatPasteBtn =
-    document.getElementById("chatPasteBtn");
-
-
-/* =========================================================
-   MODAL DE CONFIRMAÇÃO
-   ========================================================= */
-
-let confirmModal = null;
-let confirmCallback = null;
-
-
-function createConfirmModal() {
-
-    const modal = document.createElement("div");
-    modal.id = "confirmationModal";
-    modal.className = "modal-overlay confirmation-modal";
-    modal.style.display = "none";
-
-    modal.innerHTML = `
-        <div class="modal-box confirmation-box">
-            <div class="modal-header">
-                <h3 id="confirmTitle">Confirmar ação</h3>
-                <button class="modal-close" id="confirmClose" type="button">✕</button>
-            </div>
-            <p id="confirmMessage">Tem certeza que deseja fazer isso?</p>
-            <div class="confirmation-buttons">
-                <button id="confirmYes" class="btn-confirm-yes" type="button">Sim, confirmar</button>
-                <button id="confirmNo" class="btn-confirm-no" type="button">Cancelar</button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    document.getElementById("confirmClose").addEventListener("click", () => closeConfirm());
-
-    document.getElementById("confirmYes").addEventListener("click", () => {
-
-        if (confirmCallback) {
-            confirmCallback(true);
-        }
-
-        closeConfirm();
-    });
-
-    document.getElementById("confirmNo").addEventListener("click", () => {
-
-        if (confirmCallback) {
-            confirmCallback(false);
-        }
-
-        closeConfirm();
-    });
-
-    return modal;
-}
-
-
-function showConfirm(title, message, callback) {
-
-    if (!confirmModal) {
-        confirmModal = createConfirmModal();
-    }
-
-    document.getElementById("confirmTitle").textContent = title;
-    document.getElementById("confirmMessage").textContent = message;
-
-    confirmCallback = callback;
-
-    confirmModal.style.display = "flex";
-}
-
-
-function closeConfirm() {
-
-    if (confirmModal) {
-        confirmModal.style.display = "none";
-    }
-
-    confirmCallback = null;
-}
-
-
-/* =========================================================
-   MODAL DE RENOMEAR
-   ========================================================= */
-
-let renameModal = null;
-let renameCallback = null;
-
-
-function createRenameModal() {
-
-    const modal = document.createElement("div");
-    modal.id = "renameModal";
-    modal.className = "modal-overlay confirmation-modal";
-    modal.style.display = "none";
-
-    modal.innerHTML = `
-        <div class="modal-box confirmation-box">
-            <div class="modal-header">
-                <h3>Renomear conversa</h3>
-                <button class="modal-close" id="renameClose" type="button">✕</button>
-            </div>
-            <input
-                type="text"
-                id="renameInput"
-                class="rename-input"
-                maxlength="60"
-                placeholder="Digite o novo título" />
-            <div class="confirmation-buttons">
-                <button id="renameSave" class="btn-confirm-yes" type="button">Salvar</button>
-                <button id="renameCancel" class="btn-confirm-no" type="button">Cancelar</button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    const input = document.getElementById("renameInput");
-
-    const finalizar = (valor) => {
-
-        if (renameCallback) {
-            renameCallback(valor);
-        }
-
-        renameModal.style.display = "none";
-        renameCallback = null;
-    };
-
-    document.getElementById("renameClose")
-        .addEventListener("click", () => finalizar(null));
-
-    document.getElementById("renameCancel")
-        .addEventListener("click", () => finalizar(null));
-
-    document.getElementById("renameSave")
-        .addEventListener("click", () => finalizar(input.value.trim()));
-
-    input.addEventListener("keydown", (event) => {
-
-        if (event.key === "Enter") {
-            event.preventDefault();
-            finalizar(input.value.trim());
-        }
-
-        if (event.key === "Escape") {
-            event.preventDefault();
-            finalizar(null);
-        }
-    });
-
-    return modal;
-}
-
-
-function showRename(valorAtual, callback) {
-
-    if (!renameModal) {
-        renameModal = createRenameModal();
-    }
-
-    const input = document.getElementById("renameInput");
-    input.value = valorAtual || "";
-
-    renameCallback = callback;
-
-    renameModal.style.display = "flex";
-
-    setTimeout(() => {
-        input.focus();
-        input.select();
-    }, 50);
-}
-
-
-/* =========================================================
-   ESTADO DO APLICATIVO
-   ========================================================= */
-
+/* ELEMENTOS PRINCIPAIS */
+
+const authApp = document.getElementById("authApp");
+const app = document.getElementById("app");
+
+const loginPanel = document.getElementById("loginPanel");
+const registerPanel = document.getElementById("registerPanel");
+const loginForm = document.getElementById("loginForm");
+const registerForm = document.getElementById("registerForm");
+
+const loginEmail = document.getElementById("loginEmail");
+const loginPassword = document.getElementById("loginPassword");
+const loginMessage = document.getElementById("loginMessage");
+const loginSubmitBtn = document.getElementById("loginSubmitBtn");
+
+const registerName = document.getElementById("registerName");
+const registerEmail = document.getElementById("registerEmail");
+const registerPassword = document.getElementById("registerPassword");
+const registerPasswordConfirmation =
+    document.getElementById("registerPasswordConfirmation");
+const registerMessage = document.getElementById("registerMessage");
+const registerSubmitBtn = document.getElementById("registerSubmitBtn");
+
+const showRegisterBtn = document.getElementById("showRegisterBtn");
+const showLoginBtn = document.getElementById("showLoginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+
+const themeToggle = document.getElementById("themeToggle");
+const authThemeToggle = document.getElementById("authThemeToggle");
+const themeText = document.getElementById("themeText");
+const themeIcon = document.getElementById("themeIcon");
+const authThemeIcon = document.getElementById("authThemeIcon");
+
+const sidebarNewChat = document.getElementById("sidebarNewChat");
+const sidebarProfileBtn = document.getElementById("sidebarProfileBtn");
+const logoBtn = document.getElementById("logoBtn");
+const backHomeBtn = document.getElementById("backHomeBtn");
+
+const historyList = document.getElementById("historyList");
+const historyEmpty = document.getElementById("historyEmpty");
+const chatTitle = document.getElementById("chatTitle");
+const convCount = document.getElementById("convCount");
+
+const messagesEl = document.getElementById("messages");
+const chatAskBar = document.getElementById("chatAskBar");
+const chatAskInput = document.getElementById("chatAskInput");
+const chatSendBtn = document.getElementById("chatSendBtn");
+const homeAskBar = document.getElementById("homeAskBar");
+const homeAskInput = document.getElementById("homeAskInput");
+
+const stateLabel = document.getElementById("stateLabel");
+const orbitAI = document.getElementById("orbitAI");
+
+const shortcutsBtn = document.getElementById("shortcutsBtn");
+const shortcutsModal = document.getElementById("shortcutsModal");
+const closeShortcuts = document.getElementById("closeShortcuts");
+
+const profileNameInput = document.getElementById("profileNameInput");
+const profileAvatar = document.getElementById("profileAvatar");
+const profileEmail = document.getElementById("profileEmail");
+const profileGreeting = document.getElementById("profileGreeting");
+const profileNameCounter = document.getElementById("profileNameCounter");
+const saveProfileBtn = document.getElementById("saveProfileBtn");
+const profileMsgCount = document.getElementById("profileMsgCount");
+const profileConvCount = document.getElementById("profileConvCount");
+
+const homePasteBtn = document.getElementById("homePasteBtn");
+const chatPasteBtn = document.getElementById("chatPasteBtn");
+
+/* ESTADO */
+
+let currentUser = null;
 let currentView = "home";
-
 let busy = false;
-
-let conversationTitle = "";
-
 let conversations = [];
-
 let conversationCounter = 0;
-
 let totalMessages = 0;
-
 let currentConversationId = null;
-
+let conversationTitle = "";
 let lastQuestion = null;
-let lastQuestionConversationId = null;
-
-let copyTimeout = null;
-
-
-/* =========================================================
-   CHAT VAZIO
-   ========================================================= */
+let confirmModal = null;
 
 const EMPTY_CHAT_HTML = `
-
-<div
-    id="emptyChat"
-    class="empty-chat">
-
-    <div class="mini-orbit">
-
-        <div class="blob-wrap">
-
-            <div class="blob"></div>
-
-            <div class="blob b2"></div>
-
-            <div class="blob core"></div>
-
+    <div id="emptyChat" class="empty-chat">
+        <div class="mini-orbit">
+            <div class="blob-wrap">
+                <div class="blob"></div>
+                <div class="blob b2"></div>
+                <div class="blob core"></div>
+            </div>
         </div>
-
+        <p>Envie uma mensagem para começar a conversar com o Orbit.</p>
     </div>
-
-    <p>
-        Envie uma mensagem para começar
-        a conversar com o Orbit.
-    </p>
-
-</div>
-
 `;
 
+/* UTILITÁRIOS */
 
-/* =========================================================
-   NAVEGAÇÃO
-   ========================================================= */
+function parseJson(value, fallback = null) {
+    try {
+        return typeof value === "string"
+            ? JSON.parse(value)
+            : value;
+    } catch (error) {
+        console.error("JSON inválido:", error);
+        return fallback;
+    }
+}
 
-function showView(name) {
+function escapeHtml(value) {
+    const div = document.createElement("div");
+    div.textContent = String(value ?? "");
+    return div.innerHTML;
+}
 
-    document
-        .querySelectorAll(".view")
-        .forEach(view => {
+function bridgeAvailable(method) {
+    return window.orbitBridge &&
+        typeof window.orbitBridge[method] === "function";
+}
 
-            view.classList.remove("active");
+function waitForBridge(callback, attempts = 100) {
+    if (window.orbitBridge) {
+        callback();
+        return;
+    }
 
-        });
-
-
-    const target =
-        document.getElementById(
-            "view-" + name
+    if (attempts <= 0) {
+        showAuthMessage(
+            loginMessage,
+            "Não foi possível conectar a interface ao Java.",
+            "error"
         );
-
-
-    if (target) {
-
-        target.classList.add("active");
-
-        currentView = name;
-
-
-        if (
-            name === "chat" &&
-            chatAskInput
-        ) {
-
-            setTimeout(() => {
-
-                chatAskInput.focus();
-
-            }, 150);
-
-        }
-
+        return;
     }
 
+    setTimeout(() => waitForBridge(callback, attempts - 1), 50);
 }
 
-
-if (logoBtn) {
-
-    logoBtn.addEventListener(
-        "click",
-        () => showView("home")
-    );
-
-}
-
-
-if (backHomeBtn) {
-
-    backHomeBtn.addEventListener(
-        "click",
-        () => showView("home")
-    );
-
-}
-
-
-/* =========================================================
-   ESTADO DO ORBE
-   ========================================================= */
-
-function setState(state) {
-
-    if (orbitAI) {
-
-        orbitAI.classList.remove(
-            "idle",
-            "listening",
-            "thinking",
-            "responding"
-        );
-
-
-        orbitAI.classList.add(state);
-
+function runBridge(method, ...argumentsList) {
+    if (!bridgeAvailable(method)) {
+        return false;
     }
 
-
-    const labels = {
-
-        idle: "online",
-
-        listening: "digitando...",
-
-        thinking: "pensando...",
-
-        responding: "respondendo..."
-
-    };
-
-
-    if (stateLabel) {
-
-        stateLabel.textContent =
-            labels[state] || "online";
-
+    try {
+        window.orbitBridge[method](...argumentsList);
+        return true;
+    } catch (error) {
+        console.error(`Erro ao executar ${method}:`, error);
+        return false;
     }
-
 }
 
-
-/* =========================================================
-   TEMA
-   ========================================================= */
+/* TEMA */
 
 function applyTheme(theme) {
+    const selectedTheme = theme === "light" ? "light" : "dark";
+    const themeLink = document.getElementById("themeStyle");
 
-    theme =
-        theme === "light"
-            ? "light"
-            : "dark";
-
-
-    const novoLink =
-        document.createElement("link");
-
-
-    novoLink.rel =
-        "stylesheet";
-
-
-    novoLink.id =
-        "themeStyle";
-
-
-    novoLink.href =
-        "themes/" +
-        theme +
-        ".css?v=" +
-        Date.now();
-
-
-    novoLink.onload = () => {
-
-        const antigo =
-            document.getElementById(
-                "themeStyle"
-            );
-
-
-        if (
-            antigo &&
-            antigo !== novoLink
-        ) {
-
-            antigo.remove();
-
-        }
-
-    };
-
-
-    document.head.appendChild(
-        novoLink
-    );
-
+    if (themeLink) {
+        themeLink.href =
+            `themes/${selectedTheme}.css?v=${Date.now()}`;
+    }
 
     if (themeText) {
-
         themeText.textContent =
-            theme === "dark"
+            selectedTheme === "dark"
                 ? "Tema claro"
                 : "Tema escuro";
-
     }
 
+    const icon = selectedTheme === "dark" ? "☀" : "☾";
 
-    if (themeIcon) {
-
-        themeIcon.textContent =
-            theme === "dark"
-                ? "☀"
-                : "☾";
-
-    }
-
+    if (themeIcon) themeIcon.textContent = icon;
+    if (authThemeIcon) authThemeIcon.textContent = icon;
 
     try {
-
-        localStorage.setItem(
-            "orbit-theme",
-            theme
-        );
-
-    } catch (e) {
-
-        console.error(
-            "Erro ao salvar tema:",
-            e
-        );
-
+        localStorage.setItem("orbit-theme", selectedTheme);
+    } catch (error) {
+        console.error("Erro ao salvar tema:", error);
     }
-
 }
 
-
-function initTheme() {
-
-    let saved = "dark";
-
-
+function currentTheme() {
     try {
-
-        saved =
-            localStorage.getItem(
-                "orbit-theme"
-            ) || "dark";
-
-    } catch (e) {
-
-        console.error(
-            "Erro ao carregar tema:",
-            e
-        );
-
+        return localStorage.getItem("orbit-theme") || "dark";
+    } catch (error) {
+        return "dark";
     }
-
-
-    applyTheme(saved);
-
 }
 
-
-if (themeToggle) {
-
-    themeToggle.addEventListener(
-        "click",
-        () => {
-
-            let atual = "dark";
-
-
-            try {
-
-                atual =
-                    localStorage.getItem(
-                        "orbit-theme"
-                    ) || "dark";
-
-            } catch (e) {}
-
-
-            applyTheme(
-                atual === "dark"
-                    ? "light"
-                    : "dark"
-            );
-
-        }
-    );
-
+function toggleTheme() {
+    applyTheme(currentTheme() === "dark" ? "light" : "dark");
 }
 
+themeToggle?.addEventListener("click", toggleTheme);
+authThemeToggle?.addEventListener("click", toggleTheme);
 
-/* =========================================================
-   TRATAMENTO DE ERROS
-   ========================================================= */
+/* AUTENTICAÇÃO */
 
-function friendlyError(msg) {
+function showAuth() {
+    currentUser = null;
+    app.hidden = true;
+    authApp.hidden = false;
 
-    if (!navigator.onLine) {
+    resetApplicationState();
+    showAuthPanel("login");
 
-        return (
-            "Sem conexão com a internet. " +
-            "Verifique sua rede e tente novamente."
-        );
-
-    }
-
-
-    if (!msg) {
-
-        return (
-            "Ocorreu um erro inesperado. " +
-            "Tente novamente."
-        );
-
-    }
-
-
-    const m =
-        msg.toLowerCase();
-
-
-    if (
-        m.includes("inválida") ||
-        m.includes("expirou")
-    ) {
-
-        return (
-            "Chave de API inválida ou expirada. " +
-            "Verifique a configuração."
-        );
-
-    }
-
-
-    if (m.includes("limite")) {
-
-        return (
-            "Limite de uso da API atingido. " +
-            "Aguarde um instante e tente novamente."
-        );
-
-    }
-
-
-    if (
-        m.includes("indisponível") ||
-        m.includes("servidor")
-    ) {
-
-        return (
-            "O servidor da IA está indisponível " +
-            "no momento. Tente novamente em instantes."
-        );
-
-    }
-
-
-    return msg;
-
+    setTimeout(() => loginEmail?.focus(), 100);
 }
 
+function showApplication(user) {
+    currentUser = user;
+    authApp.hidden = true;
+    app.hidden = false;
 
-/* =========================================================
-   ERRO EXTERNO
-   ========================================================= */
+    loadProfile();
+    showView("home");
+}
 
-window.orbitError =
-    function (jsonOrError) {
+function showAuthPanel(panel) {
+    const registerActive = panel === "register";
 
-        removeTyping();
+    loginPanel.classList.toggle("active", !registerActive);
+    registerPanel.classList.toggle("active", registerActive);
 
-        let errorMessage = "Erro desconhecido";
+    clearAuthMessages();
 
+    setTimeout(() => {
+        if (registerActive) {
+            registerName?.focus();
+        } else {
+            loginEmail?.focus();
+        }
+    }, 80);
+}
 
-        try {
+function clearAuthMessages() {
+    [
+        loginMessage,
+        registerMessage,
+        document.getElementById("loginEmailError"),
+        document.getElementById("loginPasswordError"),
+        document.getElementById("registerNameError"),
+        document.getElementById("registerEmailError"),
+        document.getElementById("registerPasswordError"),
+        document.getElementById(
+            "registerPasswordConfirmationError"
+        )
+    ].forEach(element => {
+        if (element) {
+            element.textContent = "";
+            element.className =
+                element.classList.contains("auth-message")
+                    ? "auth-message"
+                    : "auth-field-error";
+        }
+    });
 
-            const parsed = JSON.parse(jsonOrError);
+    document
+        .querySelectorAll(".auth-input-wrap.invalid")
+        .forEach(element => element.classList.remove("invalid"));
+}
 
-            errorMessage =
-                parsed.errorMessage ||
-                friendlyError(parsed.content || "");
+function showAuthMessage(element, message, type = "error") {
+    if (!element) return;
 
-        } catch (e) {
+    element.textContent = message || "";
+    element.className = `auth-message ${type}`;
+}
 
-            errorMessage =
-                friendlyError(jsonOrError);
+function showFieldError(input, errorId, message) {
+    const errorElement = document.getElementById(errorId);
 
+    if (errorElement) {
+        errorElement.textContent = message || "";
+    }
+
+    input?.closest(".auth-input-wrap")
+        ?.classList.toggle("invalid", Boolean(message));
+}
+
+function setAuthLoading(button, loading, text) {
+    if (!button) return;
+
+    button.disabled = loading;
+    button.classList.toggle("loading", loading);
+
+    const label = button.querySelector(".auth-submit-label");
+    const arrow = button.querySelector(".auth-submit-arrow");
+
+    if (label) {
+        if (!button.dataset.originalLabel) {
+            button.dataset.originalLabel = label.textContent.trim();
         }
 
+        label.textContent = loading
+            ? text
+            : button.dataset.originalLabel;
+    }
 
-        addMessage(
-            "assistant",
-            errorMessage,
-            "error",
-            true,
-            []
-        );
+    if (arrow) {
+        arrow.textContent = loading ? "•••" : "→";
+    }
+}
 
+function validEmail(email) {
+    return /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
+        .test(email);
+}
 
-        busy = false;
+function passwordRules(password) {
+    return {
+        length: password.length >= 8,
+        uppercase: /[A-Z]/.test(password),
+        lowercase: /[a-z]/.test(password),
+        number: /[0-9]/.test(password),
+        special: /[^A-Za-z0-9]/.test(password)
+    };
+}
 
+function updatePasswordRules() {
+    const rules = passwordRules(registerPassword?.value || "");
 
-        if (chatSendBtn) {
-
-            chatSendBtn.disabled =
-                false;
-
-        }
-
-
-        setState("idle");
-
+    const mapping = {
+        ruleLength: rules.length,
+        ruleUppercase: rules.uppercase,
+        ruleLowercase: rules.lowercase,
+        ruleNumber: rules.number,
+        ruleSpecial: rules.special
     };
 
+    Object.entries(mapping).forEach(([id, valid]) => {
+        const element = document.getElementById(id);
 
-/* =========================================================
-   MENSAGENS (COM ORIGEM, FONTES E PERSISTÊNCIA NO BANCO)
-   ========================================================= */
+        if (!element) return;
+
+        element.classList.toggle("valid", valid);
+
+        const icon = element.querySelector("i");
+        if (icon) icon.textContent = valid ? "✓" : "○";
+    });
+}
+
+function validateLogin() {
+    clearAuthMessages();
+
+    let valid = true;
+    const email = loginEmail.value.trim();
+    const password = loginPassword.value;
+
+    if (!email) {
+        showFieldError(
+            loginEmail,
+            "loginEmailError",
+            "Informe seu e-mail."
+        );
+        valid = false;
+    } else if (!validEmail(email)) {
+        showFieldError(
+            loginEmail,
+            "loginEmailError",
+            "Informe um e-mail válido."
+        );
+        valid = false;
+    }
+
+    if (!password) {
+        showFieldError(
+            loginPassword,
+            "loginPasswordError",
+            "Informe sua senha."
+        );
+        valid = false;
+    }
+
+    return valid;
+}
+
+function validateRegistration() {
+    clearAuthMessages();
+
+    let valid = true;
+    const name = registerName.value.trim();
+    const email = registerEmail.value.trim();
+    const password = registerPassword.value;
+    const confirmation = registerPasswordConfirmation.value;
+    const rules = passwordRules(password);
+
+    if (name.length < 2) {
+        showFieldError(
+            registerName,
+            "registerNameError",
+            "Informe um nome com pelo menos 2 caracteres."
+        );
+        valid = false;
+    }
+
+    if (!validEmail(email)) {
+        showFieldError(
+            registerEmail,
+            "registerEmailError",
+            "Informe um e-mail válido."
+        );
+        valid = false;
+    }
+
+    if (!Object.values(rules).every(Boolean)) {
+        showFieldError(
+            registerPassword,
+            "registerPasswordError",
+            "A senha ainda não atende a todos os requisitos."
+        );
+        valid = false;
+    }
+
+    if (!confirmation) {
+        showFieldError(
+            registerPasswordConfirmation,
+            "registerPasswordConfirmationError",
+            "Confirme sua senha."
+        );
+        valid = false;
+    } else if (password !== confirmation) {
+        showFieldError(
+            registerPasswordConfirmation,
+            "registerPasswordConfirmationError",
+            "As senhas não coincidem."
+        );
+        valid = false;
+    }
+
+    return valid;
+}
+
+loginForm?.addEventListener("submit", event => {
+    event.preventDefault();
+
+    if (!validateLogin()) return;
+
+    setAuthLoading(loginSubmitBtn, true, "Entrando...");
+    showAuthMessage(loginMessage, "", "");
+
+    if (!runBridge(
+        "login",
+        loginEmail.value.trim(),
+        loginPassword.value
+    )) {
+        setAuthLoading(loginSubmitBtn, false);
+        showAuthMessage(
+            loginMessage,
+            "Não foi possível acessar o serviço de autenticação."
+        );
+    }
+});
+
+registerForm?.addEventListener("submit", event => {
+    event.preventDefault();
+
+    if (!validateRegistration()) return;
+
+    setAuthLoading(registerSubmitBtn, true, "Criando conta...");
+    showAuthMessage(registerMessage, "", "");
+
+    if (!runBridge(
+        "register",
+        registerName.value.trim(),
+        registerEmail.value.trim(),
+        registerPassword.value,
+        registerPasswordConfirmation.value
+    )) {
+        setAuthLoading(registerSubmitBtn, false);
+        showAuthMessage(
+            registerMessage,
+            "Não foi possível acessar o serviço de autenticação."
+        );
+    }
+});
+
+showRegisterBtn?.addEventListener(
+    "click",
+    () => showAuthPanel("register")
+);
+
+showLoginBtn?.addEventListener(
+    "click",
+    () => showAuthPanel("login")
+);
+
+registerPassword?.addEventListener(
+    "input",
+    updatePasswordRules
+);
+
+document
+    .querySelectorAll(".password-toggle")
+    .forEach(button => {
+        button.addEventListener("click", () => {
+            const input = document.getElementById(
+                button.dataset.passwordTarget
+            );
+
+            if (!input) return;
+
+            input.type =
+                input.type === "password" ? "text" : "password";
+
+            button.textContent =
+                input.type === "password" ? "◉" : "◌";
+        });
+    });
+
+logoutBtn?.addEventListener("click", () => {
+    showConfirm(
+        "Sair da conta?",
+        "Você poderá entrar novamente usando seu e-mail e senha.",
+        confirmed => {
+            if (confirmed) {
+                runBridge("logout");
+            }
+        }
+    );
+});
+
+/* RESPOSTAS DE AUTENTICAÇÃO ENVIADAS PELO JAVA */
+
+window.orbitAuthResult = function (jsonResult) {
+    const result = parseJson(jsonResult);
+
+    if (!result) return;
+
+    const isRegistration = result.action === "register";
+    const button = isRegistration
+        ? registerSubmitBtn
+        : loginSubmitBtn;
+    const messageElement = isRegistration
+        ? registerMessage
+        : loginMessage;
+
+    setAuthLoading(button, false);
+
+    if (!result.success) {
+        showAuthMessage(
+            messageElement,
+            result.message || "Não foi possível entrar."
+        );
+        return;
+    }
+
+    showAuthMessage(
+        messageElement,
+        result.message || "Autenticação concluída.",
+        "success"
+    );
+
+    currentUser = result.user;
+
+    setTimeout(() => {
+        if (isRegistration) {
+            registerForm.reset();
+            updatePasswordRules();
+        } else {
+            loginPassword.value = "";
+        }
+
+        showApplication(currentUser);
+    }, 300);
+};
+
+window.orbitSession = function (jsonSession) {
+    const session = parseJson(jsonSession, {authenticated: false});
+
+    if (session.authenticated && session.user) {
+        showApplication(session.user);
+        runBridge("dbLoadHistory");
+    } else {
+        showAuth();
+    }
+};
+
+window.orbitLoggedOut = function () {
+    loginForm?.reset();
+    registerForm?.reset();
+    updatePasswordRules();
+    showAuth();
+};
+
+/* NAVEGAÇÃO */
+
+function showView(name) {
+    document.querySelectorAll(".view").forEach(view => {
+        view.classList.remove("active");
+    });
+
+    const target = document.getElementById(`view-${name}`);
+
+    if (!target) return;
+
+    target.classList.add("active");
+    currentView = name;
+
+    if (name === "chat") {
+        setTimeout(() => chatAskInput?.focus(), 100);
+    }
+}
+
+logoBtn?.addEventListener("click", () => showView("home"));
+backHomeBtn?.addEventListener("click", () => showView("home"));
+
+/* ESTADO DO ORBE */
+
+function setState(state) {
+    orbitAI?.classList.remove(
+        "idle",
+        "listening",
+        "thinking",
+        "responding"
+    );
+
+    orbitAI?.classList.add(state);
+
+    const labels = {
+        idle: "online",
+        listening: "digitando...",
+        thinking: "pensando...",
+        responding: "respondendo..."
+    };
+
+    if (stateLabel) {
+        stateLabel.textContent = labels[state] || "online";
+    }
+}
+
+/* ERROS */
+
+function friendlyError(message) {
+    if (!navigator.onLine) {
+        return "Sem conexão com a internet. Verifique sua rede.";
+    }
+
+    const text = String(message || "").toLowerCase();
+
+    if (text.includes("sessão")) {
+        return "Sua sessão não está ativa. Entre novamente.";
+    }
+
+    if (
+        text.includes("inválida") ||
+        text.includes("expirou") ||
+        text.includes("api")
+    ) {
+        return "A chave da Groq é inválida ou não foi configurada.";
+    }
+
+    if (text.includes("limite")) {
+        return "O limite da IA foi atingido. Tente novamente depois.";
+    }
+
+    if (
+        text.includes("servidor") ||
+        text.includes("indisponível")
+    ) {
+        return "O servidor da IA está indisponível no momento.";
+    }
+
+    return message || "Ocorreu um erro inesperado.";
+}
+
+window.orbitError = function (jsonError) {
+    removeTyping();
+
+    const parsed = parseJson(jsonError);
+    const message = parsed
+        ? parsed.errorMessage || parsed.content
+        : jsonError;
+
+    addMessage(
+        "assistant",
+        friendlyError(message),
+        "error",
+        true,
+        [],
+        false
+    );
+
+    busy = false;
+    if (chatSendBtn) chatSendBtn.disabled = false;
+    setState("idle");
+};
+
+/* MENSAGENS */
 
 function addMessage(
     role,
     text,
     origin = "unknown",
     isError = false,
-    sources = []
+    sources = [],
+    persist = true
 ) {
+    document.getElementById("emptyChat")?.remove();
 
-    const emptyNode =
-        document.getElementById(
-            "emptyChat"
-        );
+    const row = document.createElement("div");
+    row.className = `msg ${role === "user" ? "user" : "orbit"}`;
 
-
-    if (
-        emptyNode &&
-        emptyNode.parentNode === messagesEl
-    ) {
-
-        emptyNode.remove();
-
-    }
-
-
-    const row =
-        document.createElement("div");
-
-
-    row.className =
-        "msg " +
-        (
-            role === "user"
-                ? "user"
-                : "orbit"
-        );
-
-
-    const bubble =
-        document.createElement("div");
-
-
+    const bubble = document.createElement("div");
     bubble.className =
-        "bubble" +
-        (
-            isError
-                ? " error-bubble"
-                : ""
-        );
+        `bubble${isError ? " error-bubble" : ""}`;
 
-
-    bubble.innerHTML =
-        `<div class="message-text">${escapeHtml(text)}</div>`;
-
+    const messageText = document.createElement("div");
+    messageText.className = "message-text";
+    messageText.innerHTML = escapeHtml(text).replace(/\n/g, "<br>");
+    bubble.appendChild(messageText);
 
     if (role === "assistant" && !isError) {
+        const metadata = document.createElement("div");
+        metadata.className = "message-metadata";
 
-        const metadataDiv =
-            document.createElement("div");
+        const badge = document.createElement("span");
+        badge.className = `origin-badge origin-${origin}`;
 
-        metadataDiv.className =
-            "message-metadata";
-
-
-        const originBadge =
-            document.createElement("span");
-
-        originBadge.className =
-            `origin-badge origin-${origin}`;
-
-
-        const originLabels = {
-
-            "rag":
-                "📚 Base de Conhecimento (RAG)",
-
-            "fallback":
-                "🌐 Resposta Geral",
-
-            "internet":
-                "🔗 Internet",
-
-            "error":
-                "❌ Erro"
-
+        const labels = {
+            rag: "📚 Base de Conhecimento",
+            fallback: "🌐 Resposta Geral",
+            internet: "🔗 Internet"
         };
 
+        badge.textContent = labels[origin] || "Orbit AI";
+        metadata.appendChild(badge);
 
-        originBadge.textContent =
-            originLabels[origin] ||
-            "❓ Desconhecido";
-
-
-        metadataDiv.appendChild(
-            originBadge
-        );
-
-
-        if (sources && sources.length > 0) {
-
-            const sourcesSpan =
-                document.createElement("span");
-
-            sourcesSpan.className =
-                "sources-badge";
-
-            sourcesSpan.textContent =
-                `📄 Fontes: ${sources.join(", ")}`;
-
-            metadataDiv.appendChild(
-                sourcesSpan
-            );
-
+        if (sources?.length) {
+            const sourceBadge = document.createElement("span");
+            sourceBadge.className = "sources-badge";
+            sourceBadge.textContent = `📄 ${sources.join(", ")}`;
+            metadata.appendChild(sourceBadge);
         }
 
-
-        bubble.appendChild(
-            metadataDiv
-        );
-
+        bubble.appendChild(metadata);
     }
 
-
-    const buttonsDiv =
-        document.createElement("div");
-
-    buttonsDiv.className =
-        "message-actions";
-
+    const actions = document.createElement("div");
+    actions.className = "message-actions";
 
     if (!isError) {
-
-        const copyBtn =
-            document.createElement("button");
-
-
-        copyBtn.className =
-            "copy-btn";
-
-
-        copyBtn.textContent =
-            "📋 Copiar";
-
-
-        copyBtn.type =
-            "button";
-
-
-        copyBtn.onclick = (event) => {
-
-            event.stopPropagation();
-            event.preventDefault();
-
-
-            if (copyTimeout) {
-
-                return;
-
-            }
-
-
-            copyTimeout =
-                setTimeout(() => {
-
-                    copyTimeout = null;
-
-                }, 1000);
-
-
-            const showResult = (ok) => {
-
-                copyBtn.textContent =
-                    ok ? "✓ Copiado!" : "❌ Erro";
-
-                setTimeout(() => {
-
-                    copyBtn.textContent =
-                        "📋 Copiar";
-
-                }, 1800);
-
-            };
-
-
-            const copyWithExecCommand = () => {
-
-                try {
-
-                    const textarea =
-                        document.createElement("textarea");
-
-                    textarea.value = text;
-                    textarea.style.position = "fixed";
-                    textarea.style.opacity = "0";
-                    textarea.style.top = "0";
-                    textarea.style.left = "0";
-
-                    document.body.appendChild(textarea);
-                    textarea.focus();
-                    textarea.select();
-
-                    const sucesso =
-                        document.execCommand("copy");
-
-                    document.body.removeChild(textarea);
-
-                    return sucesso;
-
-                } catch (e) {
-
-                    console.error(
-                        "Erro no execCommand:",
-                        e
-                    );
-
-                    return false;
-
-                }
-
-            };
-
-
-            if (
-                window.orbitBridge &&
-                typeof window.orbitBridge.copyToClipboard === "function"
-            ) {
-
-                try {
-
-                    const ok =
-                        window.orbitBridge.copyToClipboard(text);
-
-                    showResult(ok !== false);
-
-                    return;
-
-                } catch (e) {
-
-                    console.error(
-                        "Erro ao copiar via bridge:",
-                        e
-                    );
-
-                }
-
-            }
-
-
-            const ok = copyWithExecCommand();
-
-            showResult(ok);
-
-        };
-
-
-        buttonsDiv.appendChild(
-            copyBtn
-        );
-
-    }
-
-
-    if (
-        role === "assistant" &&
-        !isError &&
-        origin !== "error"
-    ) {
-
-        const regenerateBtn =
-            document.createElement("button");
-
-
-        regenerateBtn.className =
-            "regenerate-btn";
-
-
-        regenerateBtn.textContent =
-            "🔄 Regenerar";
-
-
-        regenerateBtn.type =
-            "button";
-
-
-        regenerateBtn.onclick =
-            () => regenerarResposta();
-
-
-        buttonsDiv.appendChild(
-            regenerateBtn
-        );
-
-    }
-
-
-    bubble.appendChild(
-        buttonsDiv
-    );
-
-
-    row.appendChild(
-        bubble
-    );
-
-
-    messagesEl.appendChild(
-        row
-    );
-
-
-    messagesEl.scrollTop =
-        messagesEl.scrollHeight;
-
-
-    const conv =
-        findConversation(
-            currentConversationId
-        );
-
-
-    if (conv) {
-
-        conv.messages.push({
-
-            role:
-            role,
-
-            text:
-            text,
-
-            origin:
-            origin,
-
-            sources:
-                sources || [],
-
-            isError:
-                !!isError
-
+        const copyButton = document.createElement("button");
+        copyButton.className = "copy-btn";
+        copyButton.type = "button";
+        copyButton.textContent = "📋 Copiar";
+
+        copyButton.addEventListener("click", () => {
+            const success = runBridge("copyToClipboard", text);
+
+            copyButton.textContent =
+                success ? "✓ Copiado!" : "Erro";
+
+            setTimeout(() => {
+                copyButton.textContent = "📋 Copiar";
+            }, 1500);
         });
 
+        actions.appendChild(copyButton);
     }
 
-
-    // Persiste a mensagem no banco de dados SQLite
-    if (conv && window.orbitBridge && typeof window.orbitBridge.dbSaveMessage === "function") {
-        try {
-            window.orbitBridge.dbSaveMessage(
-                conv.id,
-                role,
-                text,
-                origin,
-                JSON.stringify(sources || []),
-                !!isError
-            );
-        } catch (e) {
-            console.error("Erro ao salvar mensagem no banco:", e);
-        }
+    if (role === "assistant" && !isError) {
+        const regenerateButton = document.createElement("button");
+        regenerateButton.className = "regenerate-btn";
+        regenerateButton.type = "button";
+        regenerateButton.textContent = "🔄 Regenerar";
+        regenerateButton.addEventListener(
+            "click",
+            regenerateResponse
+        );
+        actions.appendChild(regenerateButton);
     }
 
+    bubble.appendChild(actions);
+    row.appendChild(bubble);
+    messagesEl.appendChild(row);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    const conversation = findConversation(currentConversationId);
+
+    if (conversation && persist) {
+        conversation.messages.push({
+            role,
+            text,
+            origin,
+            sources: sources || [],
+            isError: Boolean(isError)
+        });
+
+        runBridge(
+            "dbSaveMessage",
+            conversation.id,
+            role,
+            text,
+            origin,
+            JSON.stringify(sources || []),
+            Boolean(isError)
+        );
+    }
 }
-
-
-function escapeHtml(text) {
-
-    const map = {
-
-        '&':
-            '&amp;',
-
-        '<':
-            '&lt;',
-
-        '>':
-            '&gt;',
-
-        '"':
-            '&quot;',
-
-        "'":
-            '&#039;'
-
-    };
-
-
-    return text.replace(
-        /[&<>"']/g,
-        m => map[m]
-    );
-
-}
-
-
-/* =========================================================
-   DIGITAÇÃO
-   ========================================================= */
 
 function showTyping() {
-
     removeTyping();
 
+    const row = document.createElement("div");
+    row.id = "typingIndicator";
+    row.className = "msg orbit";
+    row.innerHTML = `
+        <div class="bubble typing-dots">
+            <span></span><span></span><span></span>
+        </div>
+    `;
 
-    const row =
-        document.createElement("div");
-
-
-    row.className =
-        "msg orbit";
-
-
-    row.id =
-        "typingIndicator";
-
-
-    const bubble =
-        document.createElement("div");
-
-
-    bubble.className =
-        "bubble typing-dots";
-
-
-    bubble.innerHTML =
-        "<span></span>" +
-        "<span></span>" +
-        "<span></span>";
-
-
-    row.appendChild(
-        bubble
-    );
-
-
-    messagesEl.appendChild(
-        row
-    );
-
-
-    messagesEl.scrollTop =
-        messagesEl.scrollHeight;
-
+    messagesEl.appendChild(row);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
 }
-
 
 function removeTyping() {
-
-    const indicator =
-        document.getElementById(
-            "typingIndicator"
-        );
-
-
-    if (indicator) {
-
-        indicator.remove();
-
-    }
-
+    document.getElementById("typingIndicator")?.remove();
 }
 
+window.orbitReceive = function (jsonResponse) {
+    removeTyping();
 
-/* =========================================================
-   RECEBER RESPOSTA DO JAVA
-   ========================================================= */
+    const response = parseJson(jsonResponse);
 
-window.orbitReceive =
-    function (jsonResponse) {
-
-        removeTyping();
-
-        let response;
-
-
-        try {
-
-            response =
-                JSON.parse(jsonResponse);
-
-        } catch (e) {
-
-            addMessage(
-                "assistant",
-                jsonResponse,
-                "fallback",
-                false,
-                []
-            );
-
-
-            busy = false;
-
-            setState("idle");
-
-            return;
-
-        }
-
-
-        const content =
-            response.content || "";
-
-        const origin =
-            response.origin || "unknown";
-
-        const sources =
-            response.sources || [];
-
-
-        const success =
-            response.success !== false;
-
-
-        if (success) {
-
-            addMessage(
-                "assistant",
-                content,
-                origin,
-                false,
-                sources
-            );
-
-
-            totalMessages++;
-
-
-            if (convCount) {
-
-                convCount.textContent =
-                    totalMessages;
-
-            }
-
-
-            updateProfileStats();
-
-        }
-
-
-        busy = false;
-
-
-        if (chatSendBtn) {
-
-            chatSendBtn.disabled =
-                false;
-
-        }
-
-
-        setState("idle");
-
-
-        if (chatAskInput) {
-
-            chatAskInput.focus();
-
-        }
-
-    };
-
-
-/* =========================================================
-   CARREGAR HISTÓRICO DO BANCO (SQLite)
-   ========================================================= */
-
-window.orbitLoadHistory = function (jsonArray) {
-
-    try {
-
-        const historico = JSON.parse(jsonArray);
-
-        conversations = historico.map(conv => ({
-            id: conv.id,
-            title: conv.title,
-            messages: (conv.messages || []).map(m => ({
-                role: m.role,
-                text: m.text,
-                origin: m.origin || "unknown",
-                sources: m.sources || [],
-                isError: !!m.isError
-            }))
-        }));
-
-        conversationCounter = conversations.reduce(
-            (max, c) => Math.max(max, c.id),
-            0
-        );
-
-        renderHistory();
-        updateProfileStats();
-
-    } catch (e) {
-        console.error("Erro ao carregar histórico do banco de dados:", e);
-    }
-};
-
-
-/* =========================================================
-   REGENERAR RESPOSTA
-   ========================================================= */
-
-function regenerarResposta() {
-
-    if (
-        busy ||
-        !lastQuestion
-    ) {
-
-        return;
-
-    }
-
-
-    const messages =
-        messagesEl.querySelectorAll(".msg");
-
-
-    if (messages.length > 0) {
-
-        const lastMsg =
-            messages[messages.length - 1];
-
-
-        if (
-            lastMsg.classList.contains("orbit")
-        ) {
-
-            lastMsg.remove();
-
-        }
-
-    }
-
-
-    const conv =
-        findConversation(
-            currentConversationId
-        );
-
-
-    if (
-        conv &&
-        conv.messages.length > 0
-    ) {
-
-        const ultimaMsg =
-            conv.messages[
-            conv.messages.length - 1
-                ];
-
-
-        if (
-            ultimaMsg.role === "assistant"
-        ) {
-
-            conv.messages.pop();
-
-        }
-
-
-        if (window.orbitBridge && typeof window.orbitBridge.dbRemoveLastMessage === "function") {
-            try {
-                window.orbitBridge.dbRemoveLastMessage(conv.id);
-            } catch (e) {
-                console.error("Erro ao remover última mensagem do banco:", e);
-            }
-        }
-
-    }
-
-
-    if (!navigator.onLine) {
-
+    if (!response) {
+        addMessage("assistant", jsonResponse, "fallback");
+    } else if (response.success !== false) {
         addMessage(
             "assistant",
-            friendlyError(null),
-            "error",
-            true,
-            []
+            response.content || "",
+            response.origin || "unknown",
+            false,
+            response.sources || []
         );
 
-        return;
-
+        totalMessages++;
+        updateProfileStats();
     }
 
+    busy = false;
+    if (chatSendBtn) chatSendBtn.disabled = false;
+    setState("idle");
+    chatAskInput?.focus();
+};
 
-    busy = true;
+/* HISTÓRICO */
 
+window.orbitLoadHistory = function (jsonHistory) {
+    const history = parseJson(jsonHistory, []);
 
-    if (chatSendBtn) {
+    conversations = Array.isArray(history)
+        ? history.map(conversation => ({
+            id: Number(conversation.id),
+            title: conversation.title,
+            messages: (conversation.messages || []).map(message => ({
+                role: message.role,
+                text: message.text,
+                origin: message.origin || "unknown",
+                sources: message.sources || [],
+                isError: Boolean(message.isError)
+            }))
+        }))
+        : [];
 
-        chatSendBtn.disabled =
-            true;
+    conversationCounter = conversations.reduce(
+        (maximum, conversation) =>
+            Math.max(maximum, conversation.id),
+        0
+    );
 
-    }
+    totalMessages = conversations.reduce(
+        (total, conversation) =>
+            total + conversation.messages.length,
+        0
+    );
 
+    renderHistory();
+    updateProfileStats();
+};
 
-    setState("thinking");
-
-    showTyping();
-
-
-    if (
-        window.orbitBridge &&
-        typeof window.orbitBridge.ask ===
-        "function"
-    ) {
-
-        try {
-
-            window.orbitBridge.ask(
-                lastQuestion
-            );
-
-        } catch (e) {
-
-            window.orbitError(
-                JSON.stringify({
-
-                    errorMessage:
-                        "Erro ao comunicar com a ponte do Java.",
-
-                    success:
-                        false
-
-                })
-            );
-
-        }
-
-    } else {
-
-        setTimeout(() => {
-
-            window.orbitReceive(
-                JSON.stringify({
-
-                    content:
-                        "Resposta simulada (fora do JavaFX).",
-
-                    origin:
-                        "fallback",
-
-                    sources:
-                        [],
-
-                    success:
-                        true
-
-                })
-            );
-
-        }, 900);
-
-    }
-
+function findConversation(id) {
+    return conversations.find(
+        conversation => conversation.id === id
+    );
 }
 
-
-/* =========================================================
-   TÍTULO
-   ========================================================= */
-
-function generateTitle(text) {
-
-    const t =
-        text.trim();
-
-
-    return t.length <= 32
-        ? t
-        : t.substring(0, 32) + "…";
-
-}
-
-
-function createConversationTitle(
-    firstMsg
-) {
-
-    if (conversationTitle) {
-
-        return;
-
-    }
-
+function createConversation(firstMessage) {
+    if (currentConversationId !== null) return;
 
     conversationTitle =
-        generateTitle(firstMsg);
+        firstMessage.length <= 32
+            ? firstMessage
+            : `${firstMessage.substring(0, 32)}…`;
 
+    conversationCounter = Math.max(
+        Date.now(),
+        conversationCounter + 1
+    );
+
+    currentConversationId = conversationCounter;
+
+    conversations.unshift({
+        id: currentConversationId,
+        title: conversationTitle,
+        messages: []
+    });
 
     chatTitle.textContent =
         conversationTitle.toUpperCase();
 
+    renderHistory();
+    updateProfileStats();
 
-    conversationCounter++;
+    runBridge(
+        "dbCreateConversation",
+        currentConversationId,
+        conversationTitle
+    );
+}
 
+function renderHistory() {
+    historyList.innerHTML = "";
 
-    currentConversationId =
-        conversationCounter;
+    if (!conversations.length) {
+        historyList.appendChild(historyEmpty);
+        return;
+    }
 
+    conversations.forEach(conversation => {
+        const container = document.createElement("div");
+        container.className = "history-item-container";
 
-    conversations.unshift({
+        const button = document.createElement("button");
+        button.className =
+            `history-item${
+                conversation.id === currentConversationId
+                    ? " active"
+                    : ""
+            }`;
+        button.type = "button";
+        button.textContent = conversation.title;
+        button.addEventListener(
+            "click",
+            () => openConversation(conversation.id)
+        );
 
-        id:
-        conversationCounter,
+        const actions = document.createElement("div");
+        actions.className = "history-item-actions";
 
-        title:
-        conversationTitle,
+        const renameButton = document.createElement("button");
+        renameButton.className = "history-action-btn";
+        renameButton.type = "button";
+        renameButton.title = "Renomear";
+        renameButton.textContent = "✎";
+        renameButton.addEventListener("click", event => {
+            event.stopPropagation();
+            renameConversation(conversation.id);
+        });
 
-        messages:
-            []
+        const deleteButton = document.createElement("button");
+        deleteButton.className =
+            "history-action-btn delete-btn";
+        deleteButton.type = "button";
+        deleteButton.title = "Excluir";
+        deleteButton.textContent = "🗑";
+        deleteButton.addEventListener("click", event => {
+            event.stopPropagation();
+            deleteConversation(conversation.id);
+        });
 
+        actions.append(renameButton, deleteButton);
+        container.append(button, actions);
+        historyList.appendChild(container);
     });
+}
 
+function renderMessages(messageList) {
+    messagesEl.innerHTML = "";
+
+    if (!messageList?.length) {
+        messagesEl.innerHTML = EMPTY_CHAT_HTML;
+        return;
+    }
+
+    messageList.forEach(message => {
+        addMessage(
+            message.role,
+            message.text,
+            message.origin,
+            message.isError,
+            message.sources,
+            false
+        );
+    });
+}
+
+function openConversation(id) {
+    if (busy) return;
+
+    const conversation = findConversation(id);
+    if (!conversation) return;
+
+    currentConversationId = conversation.id;
+    conversationTitle = conversation.title;
+    chatTitle.textContent = conversation.title.toUpperCase();
+
+    renderMessages(conversation.messages);
+    renderHistory();
+    showView("chat");
+}
+
+function startNewChat() {
+    if (busy || !currentUser) return;
+
+    currentConversationId = null;
+    conversationTitle = "";
+    chatTitle.textContent = "NOVA CONVERSA";
+    messagesEl.innerHTML = EMPTY_CHAT_HTML;
+    chatAskInput.value = "";
+
+    renderHistory();
+    showView("chat");
+}
+
+function renameConversation(id) {
+    const conversation = findConversation(id);
+    if (!conversation) return;
+
+    const newTitle = window.prompt(
+        "Digite o novo nome da conversa:",
+        conversation.title
+    );
+
+    if (!newTitle?.trim()) return;
+
+    conversation.title = newTitle.trim().substring(0, 60);
+
+    if (id === currentConversationId) {
+        chatTitle.textContent =
+            conversation.title.toUpperCase();
+    }
 
     renderHistory();
 
-    updateProfileStats();
-
-
-    // Persiste a nova conversa no banco de dados SQLite
-    if (window.orbitBridge && typeof window.orbitBridge.dbCreateConversation === "function") {
-        try {
-            window.orbitBridge.dbCreateConversation(currentConversationId, conversationTitle);
-        } catch (e) {
-            console.error("Erro ao salvar conversa no banco:", e);
-        }
-    }
-
-}
-
-
-/* =========================================================
-   HISTÓRICO (COM EXCLUIR E RENOMEAR)
-   ========================================================= */
-
-function findConversation(id) {
-
-    return conversations.find(
-        conversation =>
-            conversation.id === id
+    runBridge(
+        "dbRenameConversation",
+        id,
+        conversation.title
     );
-
 }
 
+function deleteConversation(id) {
+    const conversation = findConversation(id);
+    if (!conversation) return;
 
-function renderHistory() {
+    showConfirm(
+        "Excluir conversa?",
+        `A conversa "${conversation.title}" será excluída.`,
+        confirmed => {
+            if (!confirmed) return;
 
-    historyList.innerHTML = "";
-
-
-    if (
-        conversations.length === 0
-    ) {
-
-        historyList.appendChild(
-            historyEmpty
-        );
-
-        return;
-
-    }
-
-
-    conversations.forEach(
-        conversation => {
-
-            const itemContainer =
-                document.createElement("div");
-
-
-            itemContainer.className =
-                "history-item-container";
-
-
-            const btn =
-                document.createElement(
-                    "button"
-                );
-
-
-            btn.className =
-                "history-item" +
-                (
-                    conversation.id ===
-                    currentConversationId
-                        ? " active"
-                        : ""
-                );
-
-
-            btn.textContent =
-                conversation.title;
-
-
-            btn.onclick =
-                () =>
-                    openConversation(
-                        conversation.id
-                    );
-
-
-            itemContainer.appendChild(
-                btn
+            conversations = conversations.filter(
+                item => item.id !== id
             );
 
-
-            const actionsDiv =
-                document.createElement("div");
-
-
-            actionsDiv.className =
-                "history-item-actions";
-
-
-            const renameBtn =
-                document.createElement("button");
-
-
-            renameBtn.className =
-                "history-action-btn rename-btn";
-
-
-            renameBtn.title =
-                "Renomear conversa";
-
-
-            renameBtn.innerHTML =
-                "✎";
-
-
-            renameBtn.type =
-                "button";
-
-
-            renameBtn.onclick =
-                (e) => {
-
-                    e.stopPropagation();
-
-                    renomearConversa(
-                        conversation.id
-                    );
-
-                };
-
-
-            actionsDiv.appendChild(
-                renameBtn
-            );
-
-
-            const deleteBtn =
-                document.createElement("button");
-
-
-            deleteBtn.className =
-                "history-action-btn delete-btn";
-
-
-            deleteBtn.title =
-                "Excluir conversa";
-
-
-            deleteBtn.innerHTML =
-                "🗑";
-
-
-            deleteBtn.type =
-                "button";
-
-
-            deleteBtn.onclick =
-                (e) => {
-
-                    e.stopPropagation();
-
-                    apagarConversa(
-                        conversation.id
-                    );
-
-                };
-
-
-            actionsDiv.appendChild(
-                deleteBtn
-            );
-
-
-            itemContainer.appendChild(
-                actionsDiv
-            );
-
-
-            historyList.appendChild(
-                itemContainer
-            );
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   RENOMEAR CONVERSA
-   ========================================================= */
-
-function renomearConversa(id) {
-
-    const conv = findConversation(id);
-
-    if (!conv) {
-        return;
-    }
-
-    showRename(conv.title, (novoNome) => {
-
-        if (novoNome && novoNome.trim()) {
-
-            conv.title = novoNome.trim();
-
-            if (id === currentConversationId) {
-                chatTitle.textContent = conv.title.toUpperCase();
+            if (currentConversationId === id) {
+                currentConversationId = null;
+                conversationTitle = "";
+                messagesEl.innerHTML = EMPTY_CHAT_HTML;
+                chatTitle.textContent = "NOVA CONVERSA";
+                showView("home");
             }
 
             renderHistory();
-
-            if (window.orbitBridge && typeof window.orbitBridge.dbRenameConversation === "function") {
-                try {
-                    window.orbitBridge.dbRenameConversation(id, conv.title);
-                } catch (e) {
-                    console.error("Erro ao renomear conversa no banco:", e);
-                }
-            }
-        }
-    });
-}
-
-
-/* =========================================================
-   APAGAR CONVERSA (COM CONFIRMAÇÃO)
-   ========================================================= */
-
-function apagarConversa(id) {
-
-    const conv =
-        findConversation(id);
-
-
-    if (!conv) {
-
-        return;
-
-    }
-
-
-    showConfirm(
-
-        "Excluir conversa?",
-
-        `Tem certeza que deseja excluir a conversa "${conv.title}"? Esta ação não pode ser desfeita.`,
-
-        (confirmed) => {
-
-            if (confirmed) {
-
-                conversations =
-                    conversations.filter(
-                        c => c.id !== id
-                    );
-
-
-                if (
-                    currentConversationId === id
-                ) {
-
-                    currentConversationId =
-                        null;
-
-                    conversationTitle =
-                        "";
-
-                    startNewChat();
-
-                }
-
-
-                renderHistory();
-
-                updateProfileStats();
-
-
-                if (window.orbitBridge && typeof window.orbitBridge.dbDeleteConversation === "function") {
-                    try {
-                        window.orbitBridge.dbDeleteConversation(id);
-                    } catch (e) {
-                        console.error("Erro ao apagar conversa no banco:", e);
-                    }
-                }
-
-            }
-
-        }
-
-    );
-
-}
-
-
-/* =========================================================
-   RECONSTRUIR CHAT
-   ========================================================= */
-
-function renderMessages(msgs) {
-
-    messagesEl.innerHTML = "";
-
-
-    if (
-        !msgs ||
-        msgs.length === 0
-    ) {
-
-        messagesEl.innerHTML =
-            EMPTY_CHAT_HTML;
-
-        return;
-
-    }
-
-
-    msgs.forEach(message => {
-
-        addMessage(
-
-            message.role,
-
-            message.text,
-
-            message.origin ||
-            "unknown",
-
-            message.isError ||
-            false,
-
-            message.sources ||
-            []
-
-        );
-
-    });
-
-}
-
-
-/* =========================================================
-   ABRIR CONVERSA
-   ========================================================= */
-
-function openConversation(id) {
-
-    if (busy) {
-
-        return;
-
-    }
-
-
-    const conv =
-        findConversation(id);
-
-
-    if (!conv) {
-
-        return;
-
-    }
-
-
-    currentConversationId =
-        conv.id;
-
-
-    conversationTitle =
-        conv.title;
-
-
-    chatTitle.textContent =
-        conv.title.toUpperCase();
-
-
-    renderMessages(
-        conv.messages
-    );
-
-
-    renderHistory();
-
-
-    showView("chat");
-
-}
-
-
-/* =========================================================
-   NOVA CONVERSA
-   ========================================================= */
-
-function startNewChat() {
-
-    if (busy) {
-
-        return;
-
-    }
-
-
-    currentConversationId =
-        null;
-
-
-    conversationTitle =
-        "";
-
-
-    chatTitle.textContent =
-        "NOVA CONVERSA";
-
-
-    messagesEl.innerHTML =
-        EMPTY_CHAT_HTML;
-
-
-    chatAskInput.value =
-        "";
-
-
-    renderHistory();
-
-    updateProfileStats();
-
-
-    showView("chat");
-
-}
-
-
-if (sidebarNewChat) {
-
-    sidebarNewChat.addEventListener(
-        "click",
-        startNewChat
-    );
-
-}
-
-
-/* =========================================================
-   FUNÇÕES PARA JAVA
-   ========================================================= */
-
-window.orbitNewChat =
-    function () {
-
-        startNewChat();
-
-    };
-
-
-window.orbitClearInput =
-    function () {
-
-        if (
-            currentView === "chat"
-        ) {
-
-            chatAskInput.value =
-                "";
-
-            chatAskInput.focus();
-
-        } else {
-
-            homeAskInput.value =
-                "";
-
-            homeAskInput.focus();
-
-        }
-
-    };
-
-
-window.orbitSubmit =
-    function () {
-
-        if (
-            currentView === "chat" &&
-            chatAskBar
-        ) {
-
-            chatAskBar.requestSubmit();
-
-        } else if (homeAskBar) {
-
-            homeAskBar.requestSubmit();
-
-        }
-
-    };
-
-
-/* =========================================================
-   PERFIL
-   ========================================================= */
-
-function updateProfileNameUI(nome) {
-
-    const valor =
-        (nome || "")
-            .trim()
-            .replace(/\s+/g, " ");
-
-
-    const inicial =
-        valor
-            ? valor
-                .charAt(0)
-                .toUpperCase()
-            : "O";
-
-
-    if (profileAvatar) {
-
-        profileAvatar.textContent =
-            inicial;
-
-    }
-
-
-    const counter =
-        document.getElementById(
-            "profileNameCounter"
-        );
-
-
-    if (counter) {
-
-        counter.textContent =
-            valor.length + "/24";
-
-    }
-
-
-    const greeting =
-        document.getElementById(
-            "profileGreeting"
-        );
-
-
-    if (greeting) {
-
-        if (valor) {
-
-            greeting.textContent =
-                "Que bom ter você por aqui, " +
-                valor +
-                ".";
-
-        } else {
-
-            greeting.textContent =
-                "Personalize como o Orbit deve chamar você.";
-
-        }
-
-    }
-
-}
-
-
-function loadProfile() {
-
-    let nome = "";
-
-
-    try {
-
-        nome =
-            localStorage.getItem(
-                "orbit-username"
-            ) || "";
-
-
-    } catch (e) {
-
-        console.error(
-            "Não foi possível carregar o perfil:",
-            e
-        );
-
-    }
-
-
-    if (profileNameInput) {
-
-        profileNameInput.value =
-            nome;
-
-    }
-
-
-    updateProfileNameUI(
-        nome
-    );
-
-}
-
-
-function saveProfile() {
-
-    if (!profileNameInput) {
-
-        return;
-
-    }
-
-
-    const nome =
-        profileNameInput.value
-            .trim()
-            .replace(/\s+/g, " ");
-
-
-    profileNameInput.value =
-        nome;
-
-
-    try {
-
-        localStorage.setItem(
-            "orbit-username",
-            nome
-        );
-
-    } catch (e) {
-
-        console.error(
-            "Não foi possível salvar o perfil:",
-            e
-        );
-
-        return;
-
-    }
-
-
-    updateProfileNameUI(
-        nome
-    );
-
-
-    if (saveProfileBtn) {
-
-        const label =
-            saveProfileBtn.querySelector(
-                "span:first-child"
-            );
-
-
-        const arrow =
-            saveProfileBtn.querySelector(
-                ".profile-save-arrow"
-            );
-
-
-        if (label) {
-
-            label.textContent =
-                "Alterações salvas";
-
-        }
-
-
-        if (arrow) {
-
-            arrow.textContent =
-                "✓";
-
-        }
-
-
-        saveProfileBtn.classList.add(
-            "saved"
-        );
-
-
-        saveProfileBtn.disabled =
-            true;
-
-
-        setTimeout(
-            () => {
-
-                if (label) {
-
-                    label.textContent =
-                        "Salvar alterações";
-
-                }
-
-
-                if (arrow) {
-
-                    arrow.textContent =
-                        "→";
-
-                }
-
-
-                saveProfileBtn.classList.remove(
-                    "saved"
-                );
-
-
-                saveProfileBtn.disabled =
-                    false;
-
-            },
-            1600
-        );
-
-    }
-
-}
-
-
-function updateProfileStats() {
-
-    if (profileMsgCount) {
-
-        profileMsgCount.textContent =
-            totalMessages;
-
-    }
-
-
-    if (profileConvCount) {
-
-        profileConvCount.textContent =
-            conversations.length;
-
-    }
-
-}
-
-
-/* =========================================================
-   EVENTOS DO PERFIL
-   ========================================================= */
-
-if (profileNameInput) {
-
-    profileNameInput.addEventListener(
-        "input",
-        () => {
-
-            updateProfileNameUI(
-                profileNameInput.value
-            );
-
-        }
-    );
-
-
-    profileNameInput.addEventListener(
-        "keydown",
-        event => {
-
-            if (
-                event.key === "Enter"
-            ) {
-
-                event.preventDefault();
-
-                saveProfile();
-
-            }
-
-        }
-    );
-
-}
-
-
-if (saveProfileBtn) {
-
-    saveProfileBtn.addEventListener(
-        "click",
-        saveProfile
-    );
-
-}
-
-
-if (sidebarProfileBtn) {
-
-    sidebarProfileBtn.addEventListener(
-        "click",
-        () => {
-
-            loadProfile();
-
             updateProfileStats();
-
-            showView("profile");
-
-
-            setTimeout(
-                () => {
-
-                    if (
-                        profileNameInput
-                    ) {
-
-                        profileNameInput.focus();
-
-                    }
-
-                },
-                120
-            );
-
+            runBridge("dbDeleteConversation", id);
         }
     );
-
 }
 
+sidebarNewChat?.addEventListener("click", startNewChat);
 
-/* =========================================================
-   CLIPBOARD
-   ========================================================= */
+/* ENVIO PARA IA */
 
-async function pasteInto(inputEl) {
+function sendMessage(value) {
+    const text = value.trim();
 
-    if (!inputEl) {
-
-        return;
-
-    }
-
-
-    try {
-
-        let texto = "";
-
-
-        if (
-            window.orbitBridge &&
-            typeof window.orbitBridge.pasteFromClipboard ===
-            "function"
-        ) {
-
-            texto =
-                window.orbitBridge
-                    .pasteFromClipboard();
-
-        }
-
-        else if (
-            navigator.clipboard &&
-            typeof navigator.clipboard.readText ===
-            "function"
-        ) {
-
-            texto =
-                await navigator.clipboard.readText();
-
-        }
-
-
-        if (texto) {
-
-            inputEl.value =
-                texto;
-
-
-            inputEl.dispatchEvent(
-                new Event(
-                    "input",
-                    {
-                        bubbles: true
-                    }
-                )
-            );
-
-
-            inputEl.dispatchEvent(
-                new Event(
-                    "change",
-                    {
-                        bubbles: true
-                    }
-                )
-            );
-
-        }
-
-
-        inputEl.focus();
-
-
-    } catch (e) {
-
-        console.error(
-            "Erro ao colar:",
-            e
-        );
-
-
-        inputEl.focus();
-
-    }
-
-}
-
-
-if (homePasteBtn) {
-
-    homePasteBtn.addEventListener(
-        "click",
-        () =>
-            pasteInto(
-                homeAskInput
-            )
-    );
-
-}
-
-
-if (chatPasteBtn) {
-
-    chatPasteBtn.addEventListener(
-        "click",
-        () =>
-            pasteInto(
-                chatAskInput
-            )
-    );
-
-}
-
-
-/* =========================================================
-   ENVIO DE MENSAGENS
-   ========================================================= */
-
-function sendMessage(text) {
-
-    text =
-        text.trim();
-
-
-    if (
-        !text ||
-        busy
-    ) {
-
-        return;
-
-    }
-
+    if (!text || busy || !currentUser) return;
 
     if (!navigator.onLine) {
-
         addMessage(
             "assistant",
-            friendlyError(null),
+            friendlyError(),
             "error",
             true,
-            []
+            [],
+            false
         );
-
         return;
-
     }
-
 
     busy = true;
+    if (chatSendBtn) chatSendBtn.disabled = true;
 
-
-    if (chatSendBtn) {
-
-        chatSendBtn.disabled =
-            true;
-
-    }
-
-
-    createConversationTitle(
-        text
-    );
-
-
-    addMessage(
-        "user",
-        text,
-        "user",
-        false,
-        []
-    );
-
+    createConversation(text);
+    addMessage("user", text, "user");
 
     totalMessages++;
-
-
-    if (convCount) {
-
-        convCount.textContent =
-            totalMessages;
-
-    }
-
-
     updateProfileStats();
 
+    lastQuestion = text;
 
     showView("chat");
-
-
-    setState(
-        "thinking"
-    );
-
-
+    setState("thinking");
     showTyping();
 
+    if (!runBridge("ask", text)) {
+        window.orbitError(
+            JSON.stringify({
+                errorMessage:
+                    "Erro ao comunicar com o Java."
+            })
+        );
+    }
+}
 
-    lastQuestion =
-        text;
+function regenerateResponse() {
+    if (busy || !lastQuestion) return;
 
-    lastQuestionConversationId =
-        currentConversationId;
+    const conversation =
+        findConversation(currentConversationId);
 
+    if (!conversation?.messages.length) return;
+
+    const finalMessage =
+        conversation.messages[
+        conversation.messages.length - 1
+            ];
+
+    if (finalMessage.role !== "assistant") return;
+
+    conversation.messages.pop();
+    runBridge(
+        "dbRemoveLastMessage",
+        currentConversationId
+    );
+
+    renderMessages(conversation.messages);
+
+    busy = true;
+    if (chatSendBtn) chatSendBtn.disabled = true;
+
+    setState("thinking");
+    showTyping();
+
+    runBridge("ask", lastQuestion);
+}
+
+homeAskBar?.addEventListener("submit", event => {
+    event.preventDefault();
+
+    const value = homeAskInput.value;
+    homeAskInput.value = "";
+    sendMessage(value);
+});
+
+chatAskBar?.addEventListener("submit", event => {
+    event.preventDefault();
+
+    const value = chatAskInput.value;
+    chatAskInput.value = "";
+    sendMessage(value);
+});
+
+document.querySelectorAll(".pill").forEach(pill => {
+    pill.addEventListener("click", () => {
+        sendMessage(pill.dataset.q || "");
+    });
+});
+
+/* PERFIL */
+
+function profileStorageKey() {
+    return currentUser
+        ? `orbit-profile-name-${currentUser.id}`
+        : "orbit-profile-name";
+}
+
+function updateProfileNameUI(name) {
+    const normalized = String(name || "")
+        .trim()
+        .replace(/\s+/g, " ");
+
+    if (profileAvatar) {
+        profileAvatar.textContent =
+            normalized
+                ? normalized.charAt(0).toUpperCase()
+                : "O";
+    }
+
+    if (profileNameCounter) {
+        profileNameCounter.textContent =
+            `${normalized.length}/24`;
+    }
+
+    if (profileGreeting) {
+        profileGreeting.textContent =
+            normalized
+                ? `Que bom ter você por aqui, ${normalized}.`
+                : "Personalize como o Orbit deve chamar você.";
+    }
+}
+
+function loadProfile() {
+    if (!currentUser) return;
+
+    let name = currentUser.name || "";
+
+    try {
+        name =
+            localStorage.getItem(profileStorageKey()) ||
+            name;
+    } catch (error) {
+        console.error("Erro ao carregar perfil:", error);
+    }
+
+    profileNameInput.value = name.substring(0, 24);
+    profileEmail.textContent = currentUser.email || "—";
+
+    updateProfileNameUI(profileNameInput.value);
+    updateProfileStats();
+}
+
+function saveProfile() {
+    const name = profileNameInput.value
+        .trim()
+        .replace(/\s+/g, " ")
+        .substring(0, 24);
+
+    profileNameInput.value = name;
+
+    try {
+        localStorage.setItem(profileStorageKey(), name);
+    } catch (error) {
+        console.error("Erro ao salvar perfil:", error);
+        return;
+    }
+
+    updateProfileNameUI(name);
+
+    const label =
+        saveProfileBtn.querySelector("span:first-child");
+    const arrow =
+        saveProfileBtn.querySelector(".profile-save-arrow");
+
+    label.textContent = "Alterações salvas";
+    arrow.textContent = "✓";
+    saveProfileBtn.disabled = true;
+
+    setTimeout(() => {
+        label.textContent = "Salvar alterações";
+        arrow.textContent = "→";
+        saveProfileBtn.disabled = false;
+    }, 1500);
+}
+
+function updateProfileStats() {
+    if (convCount) convCount.textContent = totalMessages;
+    if (profileMsgCount) {
+        profileMsgCount.textContent = totalMessages;
+    }
+    if (profileConvCount) {
+        profileConvCount.textContent = conversations.length;
+    }
+}
+
+profileNameInput?.addEventListener(
+    "input",
+    () => updateProfileNameUI(profileNameInput.value)
+);
+
+profileNameInput?.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        saveProfile();
+    }
+});
+
+saveProfileBtn?.addEventListener("click", saveProfile);
+
+sidebarProfileBtn?.addEventListener("click", () => {
+    loadProfile();
+    showView("profile");
+});
+
+/* CLIPBOARD */
+
+async function pasteInto(input) {
+    if (!input) return;
+
+    try {
+        let text = "";
+
+        if (bridgeAvailable("pasteFromClipboard")) {
+            text = window.orbitBridge.pasteFromClipboard();
+        } else if (navigator.clipboard?.readText) {
+            text = await navigator.clipboard.readText();
+        }
+
+        if (text) input.value = text;
+        input.focus();
+    } catch (error) {
+        console.error("Erro ao colar:", error);
+    }
+}
+
+homePasteBtn?.addEventListener(
+    "click",
+    () => pasteInto(homeAskInput)
+);
+
+chatPasteBtn?.addEventListener(
+    "click",
+    () => pasteInto(chatAskInput)
+);
+
+/* MODAIS */
+
+function showConfirm(title, message, callback) {
+    if (!confirmModal) {
+        confirmModal = document.createElement("div");
+        confirmModal.className =
+            "modal-overlay confirmation-modal";
+
+        confirmModal.innerHTML = `
+            <div class="modal-box confirmation-box">
+                <div class="modal-header">
+                    <h3 id="confirmTitle"></h3>
+                    <button id="confirmClose"
+                            class="modal-close"
+                            type="button">✕</button>
+                </div>
+                <p id="confirmMessage"></p>
+                <div class="confirmation-buttons">
+                    <button id="confirmYes"
+                            class="btn-confirm-yes"
+                            type="button">Confirmar</button>
+                    <button id="confirmNo"
+                            class="btn-confirm-no"
+                            type="button">Cancelar</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(confirmModal);
+    }
+
+    document.getElementById("confirmTitle").textContent = title;
+    document.getElementById("confirmMessage").textContent = message;
+
+    confirmModal.classList.add("open");
+
+    const finish = result => {
+        confirmModal.classList.remove("open");
+        callback(result);
+    };
+
+    document.getElementById("confirmYes").onclick =
+        () => finish(true);
+    document.getElementById("confirmNo").onclick =
+        () => finish(false);
+    document.getElementById("confirmClose").onclick =
+        () => finish(false);
+}
+
+function toggleShortcuts(open) {
+    shortcutsModal?.classList.toggle(
+        "open",
+        open ?? !shortcutsModal.classList.contains("open")
+    );
+}
+
+shortcutsBtn?.addEventListener(
+    "click",
+    () => toggleShortcuts(true)
+);
+
+closeShortcuts?.addEventListener(
+    "click",
+    () => toggleShortcuts(false)
+);
+
+shortcutsModal?.addEventListener("click", event => {
+    if (event.target === shortcutsModal) {
+        toggleShortcuts(false);
+    }
+});
+
+/* FUNÇÕES UTILIZADAS PELO MAIN.JAVA */
+
+window.orbitNewChat = startNewChat;
+
+window.orbitClearInput = function () {
+    const input =
+        currentView === "chat"
+            ? chatAskInput
+            : homeAskInput;
+
+    if (input) {
+        input.value = "";
+        input.focus();
+    }
+};
+
+window.orbitSubmit = function () {
+    if (!currentUser) return;
+
+    if (currentView === "chat") {
+        chatAskBar?.requestSubmit();
+    } else {
+        homeAskBar?.requestSubmit();
+    }
+};
+
+/* ATALHOS */
+
+window.addEventListener("keydown", event => {
+    if (!currentUser) return;
 
     if (
-        window.orbitBridge &&
-        typeof window.orbitBridge.ask ===
-        "function"
+        event.key === "Enter" &&
+        !event.shiftKey &&
+        (
+            document.activeElement === chatAskInput ||
+            document.activeElement === homeAskInput
+        )
     ) {
-
-        try {
-
-            window.orbitBridge.ask(
-                text
-            );
-
-        } catch (e) {
-
-            window.orbitError(
-                JSON.stringify({
-
-                    errorMessage:
-                        "Erro ao comunicar com a ponte do Java.",
-
-                    success:
-                        false
-
-                })
-            );
-
-        }
-
-    } else {
-
-        setTimeout(
-            () => {
-
-                window.orbitReceive(
-                    JSON.stringify({
-
-                        content:
-                            "Resposta simulada (fora do JavaFX).",
-
-                        origin:
-                            "fallback",
-
-                        sources:
-                            [],
-
-                        success:
-                            true
-
-                    })
-                );
-
-            },
-            900
-        );
-
+        event.preventDefault();
+        window.orbitSubmit();
     }
 
+    if (event.ctrlKey && event.key.toLowerCase() === "n") {
+        event.preventDefault();
+        startNewChat();
+    }
+
+    if (event.ctrlKey && event.key.toLowerCase() === "l") {
+        event.preventDefault();
+        window.orbitClearInput();
+    }
+
+    if (event.ctrlKey && event.key === "/") {
+        event.preventDefault();
+        toggleShortcuts();
+    }
+});
+
+/* LIMPEZA DE ESTADO */
+
+function resetApplicationState() {
+    busy = false;
+    conversations = [];
+    conversationCounter = 0;
+    totalMessages = 0;
+    currentConversationId = null;
+    conversationTitle = "";
+    lastQuestion = null;
+
+    if (historyList) historyList.innerHTML = "";
+    if (historyList && historyEmpty) {
+        historyList.appendChild(historyEmpty);
+    }
+
+    if (messagesEl) messagesEl.innerHTML = EMPTY_CHAT_HTML;
+    if (chatTitle) chatTitle.textContent = "NOVA CONVERSA";
+
+    updateProfileStats();
+    setState("idle");
 }
 
+/* INICIALIZAÇÃO */
 
-/* =========================================================
-   FORM HOME
-   ========================================================= */
+document.addEventListener("DOMContentLoaded", () => {
+    applyTheme(currentTheme());
+    updatePasswordRules();
+    resetApplicationState();
 
-if (homeAskBar) {
-
-    homeAskBar.addEventListener(
-        "submit",
-        event => {
-
-            event.preventDefault();
-
-
-            const value =
-                homeAskInput.value;
-
-
-            homeAskInput.value =
-                "";
-
-
-            if (value) {
-
-                sendMessage(
-                    value
-                );
-
-            }
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   FORM CHAT
-   ========================================================= */
-
-if (chatAskBar) {
-
-    chatAskBar.addEventListener(
-        "submit",
-        event => {
-
-            event.preventDefault();
-
-
-            const value =
-                chatAskInput.value;
-
-
-            chatAskInput.value =
-                "";
-
-
-            if (value) {
-
-                sendMessage(
-                    value
-                );
-
-            }
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   PILLS (SUGESTÕES RÁPIDAS)
-   ========================================================= */
-
-document
-    .querySelectorAll(".pill")
-    .forEach(pill => {
-
-        pill.addEventListener(
-            "click",
-            () => {
-
-                showView("chat");
-
-
-                sendMessage(
-                    pill.dataset.q
-                );
-
-            }
-        );
-
+    waitForBridge(() => {
+        runBridge("checkSession");
     });
-
-
-/* =========================================================
-   ATALHOS
-   ========================================================= */
-
-function toggleShortcuts(
-    force
-) {
-
-    if (!shortcutsModal) {
-
-        return;
-
-    }
-
-
-    const open =
-        force !== undefined
-            ? force
-            : !shortcutsModal.classList.contains(
-                "open"
-            );
-
-
-    shortcutsModal.classList.toggle(
-        "open",
-        open
-    );
-
-}
-
-
-if (shortcutsBtn) {
-
-    shortcutsBtn.addEventListener(
-        "click",
-        () =>
-            toggleShortcuts(true)
-    );
-
-}
-
-
-if (closeShortcuts) {
-
-    closeShortcuts.addEventListener(
-        "click",
-        () =>
-            toggleShortcuts(false)
-    );
-
-}
-
-
-if (shortcutsModal) {
-
-    shortcutsModal.addEventListener(
-        "click",
-        event => {
-
-            if (
-                event.target ===
-                shortcutsModal
-            ) {
-
-                toggleShortcuts(false);
-
-            }
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   ATALHOS DE TECLADO
-   ========================================================= */
-
-window.addEventListener(
-    "keydown",
-    event => {
-
-        const alvo =
-            document.activeElement;
-
-
-        if (
-            event.key === "Enter" &&
-            !event.shiftKey &&
-            (
-                alvo === chatAskInput ||
-                alvo === homeAskInput
-            )
-        ) {
-
-            event.preventDefault();
-
-            window.orbitSubmit();
-
-        }
-
-
-        if (
-            event.ctrlKey &&
-            event.key.toLowerCase() === "n"
-        ) {
-
-            event.preventDefault();
-
-            window.orbitNewChat();
-
-        }
-
-
-        if (
-            event.ctrlKey &&
-            event.key.toLowerCase() === "l"
-        ) {
-
-            event.preventDefault();
-
-            window.orbitClearInput();
-
-        }
-
-
-        if (
-            event.ctrlKey &&
-            event.key === "/"
-        ) {
-
-            event.preventDefault();
-
-            toggleShortcuts();
-
-        }
-
-    }
-);
-
-
-/* =========================================================
-   INICIALIZAÇÃO
-   ========================================================= */
-
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
-
-        initTheme();
-
-        setState("idle");
-
-        renderHistory();
-
-        loadProfile();
-
-        updateProfileStats();
-
-        // Nota: o histórico não é renderizado da memória local aqui —
-        // ele chega do Java via window.orbitLoadHistory(), disparado
-        // pelo Main.java assim que o bridge está pronto.
-
-    }
-);
+});

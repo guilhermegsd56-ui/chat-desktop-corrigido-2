@@ -22,11 +22,546 @@
 
 <body>
 
-<div id="app">
+<!-- =========================================================
+     AUTENTICAÇÃO
+     ========================================================= -->
 
-    <!-- =====================================================
-         BARRA LATERAL
-         ===================================================== -->
+<div
+        id="authApp"
+        class="auth-app">
+
+    <div class="auth-background-orb auth-background-orb-one"></div>
+    <div class="auth-background-orb auth-background-orb-two"></div>
+
+    <section class="auth-brand-panel">
+
+        <button
+                id="authThemeToggle"
+                class="auth-theme-toggle"
+                type="button"
+                aria-label="Alternar tema">
+
+            <span id="authThemeIcon">☀</span>
+
+        </button>
+
+        <div class="auth-brand-content">
+
+            <div class="auth-logo">
+
+                <span class="auth-logo-dot"></span>
+
+                ORBIT
+
+            </div>
+
+            <div
+                    id="authOrbit"
+                    class="auth-orbit">
+
+                <div class="blob-wrap">
+
+                    <div class="blob"></div>
+                    <div class="blob b2"></div>
+                    <div class="blob core"></div>
+
+                </div>
+
+            </div>
+
+            <span class="auth-eyebrow">
+                INTELIGÊNCIA QUE POTENCIALIZA DECISÕES
+            </span>
+
+            <h1>
+
+                Sua jornada começa
+
+                <span class="grad">
+                    aqui.
+                </span>
+
+            </h1>
+
+            <p>
+
+                Entre na sua conta para conversar com o Orbit,
+                acessar seu histórico e tomar decisões com mais
+                clareza.
+
+            </p>
+
+            <div class="auth-feature-list">
+
+                <div class="auth-feature">
+
+                    <span>✦</span>
+
+                    <div>
+
+                        <strong>Inteligência contextual</strong>
+
+                        <small>
+                            Respostas apoiadas por uma base de conhecimento.
+                        </small>
+
+                    </div>
+
+                </div>
+
+                <div class="auth-feature">
+
+                    <span>◎</span>
+
+                    <div>
+
+                        <strong>Histórico individual</strong>
+
+                        <small>
+                            Suas conversas ficam vinculadas à sua conta.
+                        </small>
+
+                    </div>
+
+                </div>
+
+                <div class="auth-feature">
+
+                    <span>◌</span>
+
+                    <div>
+
+                        <strong>Experiência personalizada</strong>
+
+                        <small>
+                            O Orbit reconhece seu nome durante as conversas.
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="auth-form-panel">
+
+        <div class="auth-card">
+
+            <!-- LOGIN -->
+
+            <div
+                    id="loginPanel"
+                    class="auth-form-view active">
+
+                <div class="auth-form-header">
+
+                    <span class="auth-form-eyebrow">
+                        CONTA ORBIT
+                    </span>
+
+                    <h2>Bem-vindo de volta</h2>
+
+                    <p>
+                        Entre para continuar conversando com o Orbit.
+                    </p>
+
+                </div>
+
+                <form
+                        id="loginForm"
+                        class="auth-form"
+                        autocomplete="on"
+                        novalidate>
+
+                    <div class="auth-field">
+
+                        <label for="loginEmail">
+                            E-mail
+                        </label>
+
+                        <div class="auth-input-wrap">
+
+                            <span class="auth-input-icon">
+                                @
+                            </span>
+
+                            <input
+                                    id="loginEmail"
+                                    type="email"
+                                    maxlength="120"
+                                    placeholder="seuemail@exemplo.com"
+                                    autocomplete="email"
+                                    spellcheck="false"
+                                    required>
+
+                        </div>
+
+                        <small
+                                id="loginEmailError"
+                                class="auth-field-error">
+                        </small>
+
+                    </div>
+
+                    <div class="auth-field">
+
+                        <label for="loginPassword">
+                            Senha
+                        </label>
+
+                        <div class="auth-input-wrap">
+
+                            <span class="auth-input-icon">
+                                ◇
+                            </span>
+
+                            <input
+                                    id="loginPassword"
+                                    type="password"
+                                    maxlength="128"
+                                    placeholder="Digite sua senha"
+                                    autocomplete="current-password"
+                                    required>
+
+                            <button
+                                    class="password-toggle"
+                                    type="button"
+                                    data-password-target="loginPassword"
+                                    aria-label="Mostrar ou ocultar senha">
+
+                                ◉
+
+                            </button>
+
+                        </div>
+
+                        <small
+                                id="loginPasswordError"
+                                class="auth-field-error">
+                        </small>
+
+                    </div>
+
+                    <div
+                            id="loginMessage"
+                            class="auth-message"
+                            role="alert"
+                            aria-live="polite">
+                    </div>
+
+                    <button
+                            id="loginSubmitBtn"
+                            class="auth-submit-btn"
+                            type="submit">
+
+                        <span class="auth-submit-label">
+                            Entrar no Orbit
+                        </span>
+
+                        <span class="auth-submit-arrow">
+                            →
+                        </span>
+
+                    </button>
+
+                </form>
+
+                <div class="auth-switch">
+
+                    <span>
+                        Ainda não possui uma conta?
+                    </span>
+
+                    <button
+                            id="showRegisterBtn"
+                            type="button">
+
+                        Criar conta
+
+                    </button>
+
+                </div>
+
+            </div>
+
+            <!-- CADASTRO -->
+
+            <div
+                    id="registerPanel"
+                    class="auth-form-view">
+
+                <div class="auth-form-header">
+
+                    <span class="auth-form-eyebrow">
+                        NOVA CONTA
+                    </span>
+
+                    <h2>Comece sua jornada</h2>
+
+                    <p>
+                        Cadastre-se para conhecer o Orbit.
+                    </p>
+
+                </div>
+
+                <form
+                        id="registerForm"
+                        class="auth-form"
+                        autocomplete="on"
+                        novalidate>
+
+                    <div class="auth-field">
+
+                        <label for="registerName">
+                            Nome completo
+                        </label>
+
+                        <div class="auth-input-wrap">
+
+                            <span class="auth-input-icon">
+                                ✦
+                            </span>
+
+                            <input
+                                    id="registerName"
+                                    type="text"
+                                    minlength="2"
+                                    maxlength="60"
+                                    placeholder="Digite seu nome"
+                                    autocomplete="name"
+                                    required>
+
+                        </div>
+
+                        <small
+                                id="registerNameError"
+                                class="auth-field-error">
+                        </small>
+
+                    </div>
+
+                    <div class="auth-field">
+
+                        <label for="registerEmail">
+                            E-mail
+                        </label>
+
+                        <div class="auth-input-wrap">
+
+                            <span class="auth-input-icon">
+                                @
+                            </span>
+
+                            <input
+                                    id="registerEmail"
+                                    type="email"
+                                    maxlength="120"
+                                    placeholder="seuemail@exemplo.com"
+                                    autocomplete="email"
+                                    spellcheck="false"
+                                    required>
+
+                        </div>
+
+                        <small
+                                id="registerEmailError"
+                                class="auth-field-error">
+                        </small>
+
+                    </div>
+
+                    <div class="auth-field">
+
+                        <label for="registerPassword">
+                            Senha
+                        </label>
+
+                        <div class="auth-input-wrap">
+
+                            <span class="auth-input-icon">
+                                ◇
+                            </span>
+
+                            <input
+                                    id="registerPassword"
+                                    type="password"
+                                    minlength="8"
+                                    maxlength="128"
+                                    placeholder="Crie uma senha segura"
+                                    autocomplete="new-password"
+                                    required>
+
+                            <button
+                                    class="password-toggle"
+                                    type="button"
+                                    data-password-target="registerPassword"
+                                    aria-label="Mostrar ou ocultar senha">
+
+                                ◉
+
+                            </button>
+
+                        </div>
+
+                        <small
+                                id="registerPasswordError"
+                                class="auth-field-error">
+                        </small>
+
+                    </div>
+
+                    <div class="password-rules">
+
+                        <span
+                                id="ruleLength"
+                                class="password-rule">
+
+                            <i>○</i>
+                            8 caracteres
+
+                        </span>
+
+                        <span
+                                id="ruleUppercase"
+                                class="password-rule">
+
+                            <i>○</i>
+                            Letra maiúscula
+
+                        </span>
+
+                        <span
+                                id="ruleLowercase"
+                                class="password-rule">
+
+                            <i>○</i>
+                            Letra minúscula
+
+                        </span>
+
+                        <span
+                                id="ruleNumber"
+                                class="password-rule">
+
+                            <i>○</i>
+                            Número
+
+                        </span>
+
+                        <span
+                                id="ruleSpecial"
+                                class="password-rule">
+
+                            <i>○</i>
+                            Caractere especial
+
+                        </span>
+
+                    </div>
+
+                    <div class="auth-field">
+
+                        <label for="registerPasswordConfirmation">
+                            Confirmar senha
+                        </label>
+
+                        <div class="auth-input-wrap">
+
+                            <span class="auth-input-icon">
+                                ◇
+                            </span>
+
+                            <input
+                                    id="registerPasswordConfirmation"
+                                    type="password"
+                                    minlength="8"
+                                    maxlength="128"
+                                    placeholder="Digite a senha novamente"
+                                    autocomplete="new-password"
+                                    required>
+
+                            <button
+                                    class="password-toggle"
+                                    type="button"
+                                    data-password-target="registerPasswordConfirmation"
+                                    aria-label="Mostrar ou ocultar senha">
+
+                                ◉
+
+                            </button>
+
+                        </div>
+
+                        <small
+                                id="registerPasswordConfirmationError"
+                                class="auth-field-error">
+                        </small>
+
+                    </div>
+
+                    <div
+                            id="registerMessage"
+                            class="auth-message"
+                            role="alert"
+                            aria-live="polite">
+                    </div>
+
+                    <button
+                            id="registerSubmitBtn"
+                            class="auth-submit-btn"
+                            type="submit">
+
+                        <span class="auth-submit-label">
+                            Criar minha conta
+                        </span>
+
+                        <span class="auth-submit-arrow">
+                            →
+                        </span>
+
+                    </button>
+
+                </form>
+
+                <div class="auth-switch">
+
+                    <span>
+                        Já possui uma conta?
+                    </span>
+
+                    <button
+                            id="showLoginBtn"
+                            type="button">
+
+                        Fazer login
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <p class="auth-footer">
+            Orbit AI Desktop • Seus dados ficam neste dispositivo
+        </p>
+
+    </section>
+
+</div>
+
+<!-- =========================================================
+     APLICAÇÃO PRINCIPAL
+     ========================================================= -->
+
+<div
+        id="app"
+        hidden>
 
     <aside class="sidebar">
 
@@ -43,7 +578,6 @@
 
             </button>
 
-
             <button
                     id="sidebarNewChat"
                     class="new-chat-btn"
@@ -54,9 +588,6 @@
             </button>
 
         </div>
-
-
-        <!-- HISTÓRICO -->
 
         <div class="sidebar-history">
 
@@ -78,9 +609,6 @@
 
         </div>
 
-
-        <!-- PARTE INFERIOR -->
-
         <div class="sidebar-bottom">
 
             <button
@@ -88,16 +616,13 @@
                     class="side-btn"
                     type="button">
 
-                <span id="themeIcon">
-                    ☀
-                </span>
+                <span id="themeIcon">☀</span>
 
                 <span id="themeText">
                     Tema claro
                 </span>
 
             </button>
-
 
             <button
                     id="shortcutsBtn"
@@ -108,7 +633,6 @@
 
             </button>
 
-
             <button
                     id="sidebarProfileBtn"
                     class="side-btn"
@@ -118,18 +642,20 @@
 
             </button>
 
+            <button
+                    id="logoutBtn"
+                    class="side-btn logout-btn"
+                    type="button">
+
+                ↪ Sair da conta
+
+            </button>
+
         </div>
 
     </aside>
 
-
-    <!-- =====================================================
-         ÁREA PRINCIPAL
-         ===================================================== -->
-
     <main class="main">
-
-        <!-- TOPBAR -->
 
         <header class="topbar">
 
@@ -143,7 +669,6 @@
 
             </div>
 
-
             <div
                     id="chatTitle"
                     class="chat-title">
@@ -151,7 +676,6 @@
                 NOVA CONVERSA
 
             </div>
-
 
             <div class="msg-count">
 
@@ -165,10 +689,7 @@
 
         </header>
 
-
-        <!-- =================================================
-             HOME
-             ================================================= -->
+        <!-- TELA INICIAL -->
 
         <div
                 id="view-home"
@@ -183,9 +704,7 @@
                     <div class="blob-wrap">
 
                         <div class="blob"></div>
-
                         <div class="blob b2"></div>
-
                         <div class="blob core"></div>
 
                     </div>
@@ -194,17 +713,16 @@
 
             </div>
 
-
             <section class="hero">
 
                 <div class="eyebrow">
                     Orbit AI
                 </div>
 
-
                 <h1 class="hero-title">
 
                     Bem-vindo ao
+
                     <span class="grad">
                         Orbit!
                     </span>
@@ -219,7 +737,6 @@
 
                 </h1>
 
-
                 <p class="hero-desc">
 
                     Uma inteligência viva, feita para
@@ -227,7 +744,6 @@
                     em tempo real.
 
                 </p>
-
 
                 <form
                         id="homeAskBar"
@@ -239,7 +755,6 @@
                             id="homeAskInput"
                             placeholder="Faça uma pergunta ao Orbit...">
 
-
                     <button
                             type="button"
                             id="homePasteBtn"
@@ -249,7 +764,6 @@
                         📋
 
                     </button>
-
 
                     <button
                             type="submit"
@@ -273,7 +787,6 @@
 
                 </form>
 
-
                 <div class="quick-row">
 
                     <div
@@ -283,7 +796,6 @@
                         Como funciona o Orbit?
 
                     </div>
-
 
                     <div
                             class="pill"
@@ -299,10 +811,7 @@
 
         </div>
 
-
-        <!-- =================================================
-             CHAT
-             ================================================= -->
+        <!-- CHAT -->
 
         <div
                 id="view-chat"
@@ -321,27 +830,21 @@
                         <div class="blob-wrap">
 
                             <div class="blob"></div>
-
                             <div class="blob b2"></div>
-
                             <div class="blob core"></div>
 
                         </div>
 
                     </div>
 
-
                     <p>
-
                         Envie uma mensagem para começar
                         a conversar com o Orbit.
-
                     </p>
 
                 </div>
 
             </div>
-
 
             <form
                     id="chatAskBar"
@@ -353,7 +856,6 @@
                         id="chatAskInput"
                         placeholder="Mensagem para o Orbit...">
 
-
                 <button
                         type="button"
                         id="chatPasteBtn"
@@ -363,7 +865,6 @@
                     📋
 
                 </button>
-
 
                 <button
                         type="submit"
@@ -390,10 +891,7 @@
 
         </div>
 
-
-        <!-- =================================================
-             PERFIL
-             ================================================= -->
+        <!-- PERFIL -->
 
         <div
                 id="view-profile"
@@ -402,9 +900,6 @@
             <div class="profile-shell">
 
                 <div class="profile-glow"></div>
-
-
-                <!-- CABEÇALHO -->
 
                 <div class="profile-header">
 
@@ -418,7 +913,6 @@
 
                         </div>
 
-
                         <span
                                 class="profile-online-dot"
                                 aria-label="Online">
@@ -426,18 +920,15 @@
 
                     </div>
 
-
                     <div class="profile-heading">
 
                         <span class="profile-eyebrow">
                             CONTA ORBIT
                         </span>
 
-
                         <h1>
                             Seu perfil
                         </h1>
-
 
                         <p id="profileGreeting">
 
@@ -450,44 +941,27 @@
 
                 </div>
 
-
-                <!-- SEPARADOR -->
-
                 <div class="profile-divider"></div>
-
-
-                <!-- =================================================
-                     NOME
-                     ================================================= -->
 
                 <div class="profile-form">
 
                     <div class="profile-field-label">
 
                         <label for="profileNameInput">
-
                             Nome de exibição
-
                         </label>
 
-
                         <span id="profileNameCounter">
-
                             0/24
-
                         </span>
 
                     </div>
 
-
                     <div class="profile-input-wrap">
 
                         <span class="profile-input-icon">
-
                             ✦
-
                         </span>
-
 
                         <input
                                 id="profileNameInput"
@@ -498,15 +972,12 @@
 
                     </div>
 
-
                     <p class="profile-help">
 
-                        Esse nome ficará salvo neste
-                        dispositivo e aparecerá sempre
-                        que você abrir o seu perfil.
+                        Esse nome será utilizado na sua experiência
+                        com o Orbit neste dispositivo.
 
                     </p>
-
 
                     <button
                             id="saveProfileBtn"
@@ -517,7 +988,6 @@
                             Salvar alterações
                         </span>
 
-
                         <span class="profile-save-arrow">
                             →
                         </span>
@@ -526,28 +996,17 @@
 
                 </div>
 
-
-                <!-- =================================================
-                     RESUMO
-                     ================================================= -->
-
                 <div class="profile-section-title">
-
                     Resumo da conta
-
                 </div>
 
-
                 <div class="profile-stats">
-
-                    <!-- MENSAGENS -->
 
                     <div class="profile-stat">
 
                         <span class="profile-stat-icon">
                             ◌
                         </span>
-
 
                         <div>
 
@@ -563,15 +1022,11 @@
 
                     </div>
 
-
-                    <!-- CONVERSAS -->
-
                     <div class="profile-stat">
 
                         <span class="profile-stat-icon">
                             ◎
                         </span>
-
 
                         <div>
 
@@ -587,15 +1042,11 @@
 
                     </div>
 
-
-                    <!-- STATUS -->
-
                     <div class="profile-stat">
 
                         <span class="profile-stat-icon">
                             ●
                         </span>
-
 
                         <div>
 
@@ -611,15 +1062,11 @@
 
                     </div>
 
-
-                    <!-- PLANO -->
-
                     <div class="profile-stat">
 
                         <span class="profile-stat-icon">
                             ✧
                         </span>
-
 
                         <div>
 
@@ -637,12 +1084,27 @@
 
                 </div>
 
-
-                <!-- =================================================
-                     INFORMAÇÕES
-                     ================================================= -->
-
                 <div class="profile-details">
+
+                    <div class="profile-detail-row">
+
+                        <div>
+
+                            <small>
+                                E-mail
+                            </small>
+
+                            <strong id="profileEmail">
+                                —
+                            </strong>
+
+                        </div>
+
+                        <span>
+                            Conta
+                        </span>
+
+                    </div>
 
                     <div class="profile-detail-row">
 
@@ -658,13 +1120,11 @@
 
                         </div>
 
-
                         <span>
                             Groq
                         </span>
 
                     </div>
-
 
                     <div class="profile-detail-row">
 
@@ -680,7 +1140,6 @@
 
                         </div>
 
-
                         <span>
                             v1.0
                         </span>
@@ -688,11 +1147,6 @@
                     </div>
 
                 </div>
-
-
-                <!-- =================================================
-                     VOLTAR
-                     ================================================= -->
 
                 <button
                         id="backHomeBtn"
@@ -711,10 +1165,7 @@
 
 </div>
 
-
-<!-- =========================================================
-     MODAL DE ATALHOS
-     ========================================================= -->
+<!-- MODAL DE ATALHOS -->
 
 <div
         id="shortcutsModal"
@@ -728,7 +1179,6 @@
                 Atalhos de teclado
             </h3>
 
-
             <button
                     id="closeShortcuts"
                     class="modal-close"
@@ -739,7 +1189,6 @@
             </button>
 
         </div>
-
 
         <ul class="shortcut-list">
 
@@ -755,7 +1204,6 @@
 
             </li>
 
-
             <li>
 
                 <span>
@@ -770,7 +1218,6 @@
 
             </li>
 
-
             <li>
 
                 <span>
@@ -784,7 +1231,6 @@
                 </span>
 
             </li>
-
 
             <li>
 
@@ -805,7 +1251,6 @@
     </div>
 
 </div>
-
 
 <script src="script.js"></script>
 
