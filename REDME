@@ -1,0 +1,112 @@
+# Orbit AI
+
+> Inteligência que potencializa decisões.
+
+Aplicativo desktop com chat de inteligência artificial, criado para apoiar gestores e profissionais de RH em processos de contratação. É um projeto pessoal de estudo, desenvolvido para praticar desenvolvimento Full Stack, do banco de dados à interface.
+
+**Status:** em desenvolvimento.
+
+[▶ Ver demonstração em vídeo](COLE_AQUI_O_LINK_DO_POST_NO_LINKEDIN)
+
+![Tela de chat do Orbit AI](docs/chat.png)
+
+## Telas
+
+| Login | Cadastro |
+|---|---|
+| ![Login](docs/login.png) | ![Cadastro](docs/cadastro.png) |
+
+| Início | Perfil |
+|---|---|
+| ![Início](docs/inicio.png) | ![Perfil](docs/perfil.png) |
+
+| Tema claro |
+|---|
+| ![Tema claro](docs/claro.png) |
+
+## Funcionalidades
+
+**Já funciona**
+
+- Chat com IA, integrado à API da Groq (modelo `openai/gpt-oss-120b`)
+- Cadastro e login, com senha protegida por hash (PBKDF2-SHA256)
+- Histórico de conversas: criar, renomear e excluir, salvo em SQLite
+- Perfil do usuário com nome e avatar
+- Tema claro e escuro
+- Atalhos de teclado: `Ctrl+N` (nova conversa), `Ctrl+L` (limpar campo) e `Ctrl+/` (lista de atalhos)
+
+**Em desenvolvimento**
+
+- Base de conhecimento com busca por contexto (RAG). A estrutura existe, mas o serviço de embeddings ainda é um placeholder e a base tem apenas conteúdo de teste.
+- Análise de currículos e comparação de candidatos (planejado)
+
+## Tecnologias
+
+| Área | Tecnologia |
+|---|---|
+| Linguagem | Java 21 |
+| Interface | JavaFX (WebView) com HTML5, CSS3 e JavaScript |
+| Banco de dados | SQLite (`sqlite-jdbc`) |
+| IA | API da Groq |
+| JSON | Gson |
+| Build | Maven |
+
+## Como funciona
+
+```text
+Interface (HTML/CSS/JS no WebView)
+        ↓  JSBridge
+Controller → Services (Auth, Groq, RAG, Histórico)
+        ↓                         ↓
+   SQLite (usuários,        API da Groq
+   conversas, mensagens)
+```
+
+Organização do código (`chat-desktop/src/main/java/org/example/chatdesktop`):
+
+- `model`: classes de dados (usuário, mensagens)
+- `service`: autenticação, integração com a Groq, RAG, banco de dados
+- `controller` e `bridge`: ligação entre a interface web e o Java
+- `resources/.../web`: telas, estilos e temas
+
+## Como executar
+
+**Requisitos:** JDK 21 e uma chave da API da Groq.
+
+```bash
+git clone https://github.com/guilhermegsd56-ui/chat-desktop-corrigido-2.git
+cd chat-desktop-corrigido-2/chat-desktop
+```
+
+Defina a chave como variável de ambiente (não coloque a chave no código):
+
+```bash
+# Windows (PowerShell)
+$env:GROQ_API_KEY="sua_chave_aqui"
+
+# Linux / macOS
+export GROQ_API_KEY="sua_chave_aqui"
+```
+
+Execute:
+
+```bash
+./mvnw javafx:run
+```
+
+O banco de dados SQLite (`orbit.db`) é criado automaticamente na primeira execução.
+
+## O que aprendi
+
+- Programação orientada a objetos e organização em camadas
+- Consumo de API REST com `java.net.http`
+- Persistência com SQLite e SQL
+- Autenticação com hash de senha
+- Comunicação entre Java e JavaScript
+- Criação de interface com temas e atalhos de teclado
+
+## Autor
+
+**Guilherme Silva Dias**, estudante de Técnico em Desenvolvimento de Sistemas (SENAC)
+
+[LinkedIn](https://www.linkedin.com/in/guilherme-silva-dias-8170aa3bb/) · [GitHub](https://github.com/guilhermegsd56-ui)
